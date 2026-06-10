@@ -291,6 +291,7 @@
           <div style="display:flex;gap:7px;flex-wrap:wrap">
             <button class="btn btn-g sm" onclick="exportBookings()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 3v12M8 11l4 4 4-4M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>Export</button>
             <button class="btn btn-o sm" onclick="document.getElementById('bk-import-file').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 21V9M8 13l4-4 4 4M20 7v-2a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2"/></svg>Import Past</button>
+            <button class="btn btn-o sm" onclick="downloadBookingTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Template</button>
             <input type="file" id="bk-import-file" accept=".xlsx,.xls" style="display:none" onchange="importBookings(this)">
             <button class="btn btn-d sm" onclick="clearHistory()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Clear All</button>
           </div>
