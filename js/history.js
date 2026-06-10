@@ -77,6 +77,25 @@ async function clearHistory() {
 }
 
 /* ── Export / Import past bookings (Excel) ── */
+function fmtDT(d){ d=new Date(d); if(isNaN(d)) return ''; const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+async function downloadBookingTemplate(){
+  try{
+    const XLSX=await getXLSX();
+    const rows=[
+      ['Date','Dog(s)','Owner','Service','Check-In','Check-Out','Amount','Paid','Method'],
+      ['2026-06-08','Buddy','Sarah Johnson','Boarding','2026-06-06 10:00','2026-06-08 11:00',165,'Yes','Cash'],
+      ['2026-06-09','Luna, Max','Mike Lee','Day Care','2026-06-09 08:00','2026-06-09 17:00',70,'No',''],
+      ['','(dog name; comma-separate multiple)','(owner name)','Boarding or Day Care','YYYY-MM-DD HH:MM','YYYY-MM-DD HH:MM','(number only)','Yes/No','Cash/Card/Venmo/Zelle/Other']
+    ];
+    const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:12},{wch:24},{wch:18},{wch:13},{wch:18},{wch:18},{wch:10},{wch:7},{wch:24}];
+    // Force date columns to text so Excel keeps the literal YYYY-MM-DD HH:MM strings
+    const range=XLSX.utils.decode_range(ws['!ref']);
+    for(let R=1; R<=range.e.r; R++){ ['A','E','F'].forEach(C=>{ const cell=ws[C+(R+1)]; if(cell){ cell.t='s'; } }); }
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Bookings');
+    XLSX.writeFile(wb,'shvaan-import-template.xlsx');
+    toast('Template downloaded.');
+  }catch(e){ toast('Could not create template: '+e.message, true); }
+}
 async function exportBookings(){
   if(!bookings.length){ toast('No bookings to export.', true); return; }
   try{
@@ -84,18 +103,21 @@ async function exportBookings(){
     const rows=[['Date','Dog(s)','Owner','Service','Check-In','Check-Out','Amount','Paid','Method']];
     bookings.forEach(b=>{
       rows.push([
-        new Date(b.checkout||b.saved_at).toLocaleDateString('en-US'),
+        fmtDT(b.checkout||b.saved_at).slice(0,10),
         (b.entries||[]).map(e=>e.dogName||'').join(', '),
         (b.entries||[])[0]?.ownerName||'',
         b.service==='boarding'?'Boarding':'Day Care',
-        new Date(b.checkin).toLocaleString('en-US'),
-        new Date(b.checkout).toLocaleString('en-US'),
+        fmtDT(b.checkin),
+        fmtDT(b.checkout),
         parseFloat(b.grand_total||0),
         b.paid?'Yes':'No',
         b.payment_method||''
       ]);
     });
-    const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:12},{wch:20},{wch:18},{wch:11},{wch:20},{wch:20},{wch:10},{wch:7},{wch:12}];
+    const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:12},{wch:20},{wch:18},{wch:11},{wch:18},{wch:18},{wch:10},{wch:7},{wch:12}];
+    // Force the date columns (A, E, F) to be stored as text so Excel won't reconvert them
+    const range=XLSX.utils.decode_range(ws['!ref']);
+    for(let R=1; R<=range.e.r; R++){ ['A','E','F'].forEach(C=>{ const cell=ws[C+(R+1)]; if(cell){ cell.t='s'; } }); }
     const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Bookings');
     XLSX.writeFile(wb,'shvaan-bookings-'+new Date().toISOString().slice(0,10)+'.xlsx');
     toast('Exported '+bookings.length+' booking'+(bookings.length!==1?'s':'')+'.');
@@ -106,32 +128,56 @@ async function importBookings(input){
   const re=document.getElementById('bk-import-result'); re.style.display='none';
   try{
     const XLSX=await getXLSX();
-    const buf=await file.arrayBuffer(), wb=XLSX.read(buf,{type:'array'});
-    const ws=wb.Sheets[wb.SheetNames[0]], rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    const buf=await file.arrayBuffer(), wb=XLSX.read(buf,{type:'array', cellDates:true});
+    const ws=wb.Sheets[wb.SheetNames[0]], rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false,dateNF:'yyyy-mm-dd hh:mm'});
     if(rows.length<2) throw new Error('Spreadsheet appears empty.');
     const hdrs=rows[0].map(h=>String(h).toLowerCase().trim());
     const col=names=>{for(const n of names){const i=hdrs.indexOf(n);if(i!==-1)return i;}return -1;};
     const dgc=col(['dog(s)','dog','dogs','dog name']), oc=col(['owner','owner name']), sc=col(['service']), cic=col(['check-in','checkin','check in']), coc=col(['check-out','checkout','check out']), amc=col(['amount','total','grand total']), pc=col(['paid']), mc=col(['method','payment method']);
     if(dgc===-1||cic===-1||coc===-1||amc===-1) throw new Error('Need at least Dog(s), Check-In, Check-Out, and Amount columns.');
-    const toAdd=[];
+    const toAdd=[]; let badDates=0;
     rows.slice(1).forEach(r=>{
       const dn=String(r[dgc]||'').trim(); if(!dn) return;
-      const ci=new Date(r[cic]), co=new Date(r[coc]);
-      if(isNaN(ci)||isNaN(co)) return;
+      const ci=parseFlexibleDate(r[cic]), co=parseFlexibleDate(r[coc]);
+      if(!ci||!co){ badDates++; return; }
       const amt=parseFloat(String(r[amc]).replace(/[^0-9.]/g,''))||0;
       const svc=String(r[sc]||'boarding').toLowerCase().includes('day')?'daycare':'boarding';
       const paid=['yes','true','1','paid','y'].includes(String(r[pc]||'').toLowerCase().trim());
       toAdd.push({ id:Date.now().toString()+Math.random().toString(36).slice(2), saved_at:co.toISOString(), service:svc, checkin:ci.toISOString(), checkout:co.toISOString(), grand_total:amt, paid:paid, payment_method:mc!==-1?String(r[mc]||'').trim()||null:null, imported:true,
         entries:[{dogName:dn, ownerName:oc!==-1?String(r[oc]||'').trim():'', rate:0, fullDays:0, extraHrs:0, surcharge:0, total:amt}] });
     });
-    if(!toAdd.length) throw new Error('No valid rows found.');
+    if(!toAdd.length) throw new Error(badDates?('No valid rows — '+badDates+' row(s) had unreadable dates. Use format YYYY-MM-DD HH:MM (e.g. 2026-06-10 14:00).'):'No valid rows found.');
     setSyncState('busy');
     for(const b of toAdd){ await dbInsertBooking(b); bookings.unshift(b); }
     setSyncState('ok');
     renderHistory(); updateBadges();
     re.style.display='block'; re.style.color='var(--forest)';
-    re.innerHTML='✅ Imported <strong>'+toAdd.length+'</strong> past booking'+(toAdd.length!==1?'s':'')+'.';
+    re.innerHTML='✅ Imported <strong>'+toAdd.length+'</strong> past booking'+(toAdd.length!==1?'s':'')+(badDates?' ('+badDates+' skipped — bad dates)':'')+'.';
     toast('Imported '+toAdd.length+' booking'+(toAdd.length!==1?'s':'')+'.');
   }catch(e){ const re2=document.getElementById('bk-import-result'); re2.style.display='block'; re2.style.color='var(--danger)'; re2.textContent='⚠️ '+e.message; setSyncState('ok'); }
   input.value='';
+}
+/* Accepts: JS Date, Excel serial number, ISO text, US-format text, etc. Returns a valid Date or null. */
+function parseFlexibleDate(v){
+  if(v==null||v==='') return null;
+  if(v instanceof Date) return isNaN(v)?null:v;
+  // Excel serial number (days since 1899-12-30). Treat plausible range only.
+  if(typeof v==='number' || (/^\d+(\.\d+)?$/.test(String(v).trim()))){
+    const n=parseFloat(v);
+    if(n>20000 && n<80000){ // ~1954 to ~2119, sane booking range
+      const ms=Math.round((n-25569)*86400*1000); // 25569 = days between 1899-12-30 and 1970-01-01
+      const d=new Date(ms);
+      return isNaN(d)?null:d;
+    }
+  }
+  // Text date — try native parse first
+  let s=String(v).trim();
+  let d=new Date(s);
+  if(!isNaN(d)) return d;
+  // Try common explicit formats: YYYY-MM-DD [HH:MM], MM/DD/YYYY [HH:MM]
+  let m=s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/);
+  if(m){ d=new Date(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0)); return isNaN(d)?null:d; }
+  m=s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:[ T](\d{1,2}):(\d{2}))?/);
+  if(m){ d=new Date(+m[3],+m[1]-1,+m[2],+(m[4]||0),+(m[5]||0)); return isNaN(d)?null:d; }
+  return null;
 }
