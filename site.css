@@ -38,6 +38,7 @@ header.site{position:sticky;top:0;z-index:100;background:rgba(251,246,239,.92);b
 .btn-sm{height:40px;padding:0 16px;font-size:14px}
 .menu-toggle{display:none;background:none;border:none;cursor:pointer;padding:6px}
 .menu-toggle svg{width:26px;height:26px;color:var(--ink)}
+.mobile-menu{display:none}
 
 /* ── Hero ── */
 .hero{background:linear-gradient(160deg,#FCEEDF 0%,var(--cream) 60%);padding:70px 0 80px;position:relative;overflow:hidden}
