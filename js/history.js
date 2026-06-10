@@ -1,23 +1,61 @@
 /* ═══════════════════════════════════════
    HISTORY
 ═══════════════════════════════════════ */
+let histFilterDogs=new Set(), histFilterOwners=new Set(), histDdOpen=false, histoDdOpen=false;
+// Build a sorted unique owner list from dogs + bookings
+function allOwnerNames(){
+  const s=new Set();
+  dogs.forEach(d=>{ if(d.owner_name) s.add(d.owner_name); });
+  bookings.forEach(b=>(b.entries||[]).forEach(e=>{ if(e.ownerName) s.add(e.ownerName); }));
+  return [...s].sort((a,b)=>a.localeCompare(b));
+}
+/* Dog dropdown */
+function renderHistDDList(){
+  const list=document.getElementById('hist-dd-list'); if(!list) return;
+  const q=(document.getElementById('hist-dd-search')?.value||'').toLowerCase().trim();
+  const filtered=dogs.filter(d=>!q||(d.dog_name||'').toLowerCase().includes(q)||(d.owner_name||'').toLowerCase().includes(q));
+  if(!filtered.length){ list.innerHTML='<div style="padding:14px;text-align:center;font-size:13px;color:var(--ink-faint)">No dogs match</div>'; return; }
+  list.innerHTML=filtered.map(d=>`<div class="dd-item${histFilterDogs.has(d.dog_name)?' sel':''}" onclick="toggleHistDog('${esc(d.dog_name).replace(/'/g,"\\'")}')"><div class="dd-ava">${d.photo?`<img src="${d.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div class="dd-name">${esc(d.dog_name)}</div><div class="dd-sub">${esc(d.owner_name)}</div></div><div class="dd-chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>`).join('');
+}
+function toggleHistDD(){ histDdOpen=!histDdOpen; document.getElementById('hist-dd-menu').style.display=histDdOpen?'block':'none'; document.getElementById('hist-dd-btn').classList.toggle('open',histDdOpen); if(histDdOpen){ const s=document.getElementById('hist-dd-search'); if(s){ s.value=''; renderHistDDList(); setTimeout(()=>s.focus(),50);} } }
+function toggleHistDog(name){ if(histFilterDogs.has(name)) histFilterDogs.delete(name); else histFilterDogs.add(name); renderHistDDList(); renderHistFilterUI(); renderHistory(); }
+/* Owner dropdown */
+function renderHistoDDList(){
+  const list=document.getElementById('histo-dd-list'); if(!list) return;
+  const q=(document.getElementById('histo-dd-search')?.value||'').toLowerCase().trim();
+  const owners=allOwnerNames().filter(o=>!q||o.toLowerCase().includes(q));
+  if(!owners.length){ list.innerHTML='<div style="padding:14px;text-align:center;font-size:13px;color:var(--ink-faint)">No owners match</div>'; return; }
+  list.innerHTML=owners.map(o=>`<div class="dd-item${histFilterOwners.has(o)?' sel':''}" onclick="toggleHistOwner('${esc(o).replace(/'/g,"\\'")}')"><div class="dd-ava">👤</div><div style="flex:1;min-width:0"><div class="dd-name">${esc(o)}</div></div><div class="dd-chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>`).join('');
+}
+function toggleHistoDD(){ histoDdOpen=!histoDdOpen; document.getElementById('histo-dd-menu').style.display=histoDdOpen?'block':'none'; document.getElementById('histo-dd-btn').classList.toggle('open',histoDdOpen); if(histoDdOpen){ const s=document.getElementById('histo-dd-search'); if(s){ s.value=''; renderHistoDDList(); setTimeout(()=>s.focus(),50);} } }
+function toggleHistOwner(name){ if(histFilterOwners.has(name)) histFilterOwners.delete(name); else histFilterOwners.add(name); renderHistoDDList(); renderHistFilterUI(); renderHistory(); }
+function renderHistFilterUI(){
+  const dl=document.getElementById('hist-dd-lbl'), ol=document.getElementById('histo-dd-lbl');
+  if(dl){ dl.textContent=histFilterDogs.size?histFilterDogs.size+' dog'+(histFilterDogs.size>1?'s':''):'All dogs'; dl.style.color=histFilterDogs.size?'var(--ink)':'var(--ink-faint)'; }
+  if(ol){ ol.textContent=histFilterOwners.size?histFilterOwners.size+' owner'+(histFilterOwners.size>1?'s':''):'All owners'; ol.style.color=histFilterOwners.size?'var(--ink)':'var(--ink-faint)'; }
+  const tags=document.getElementById('hist-filter-tags'); if(!tags) return;
+  let html='';
+  html+=[...histFilterDogs].map(n=>`<span class="sel-tag">🐶 ${esc(n)}<span class="sel-tag-x" onclick="toggleHistDog('${esc(n).replace(/'/g,"\\'")}')">×</span></span>`).join('');
+  html+=[...histFilterOwners].map(n=>`<span class="sel-tag">👤 ${esc(n)}<span class="sel-tag-x" onclick="toggleHistOwner('${esc(n).replace(/'/g,"\\'")}')">×</span></span>`).join('');
+  tags.innerHTML=html;
+}
 function renderHistory() {
   const c=document.getElementById('hist-wrap'), cnt=document.getElementById('hist-cnt');
+  renderHistFilterUI();
   if(!bookings.length){c.innerHTML='<div class="es"><span class="ei">📋</span><p>No bookings saved yet.</p></div>';cnt.textContent='0 bookings';return;}
-  const q=(document.getElementById('hist-search')?.value||'').toLowerCase().trim();
   const paidF=document.getElementById('hist-paid')?.value||'all';
   const svcF=document.getElementById('hist-svc')?.value||'all';
+  const anyFilter=histFilterDogs.size||histFilterOwners.size||paidF!=='all'||svcF!=='all';
   let list=bookings.filter(b=>{
     if(svcF!=='all' && b.service!==svcF) return false;
     if(paidF==='paid' && !b.paid) return false;
     if(paidF==='unpaid' && b.paid) return false;
-    if(q){
-      const hay=((b.entries||[]).map(e=>(e.dogName||e.dog_name||'')+' '+(e.ownerName||'')).join(' ')).toLowerCase();
-      if(!hay.includes(q)) return false;
-    }
+    const ents=b.entries||[];
+    if(histFilterDogs.size && !ents.some(e=>histFilterDogs.has(e.dogName||e.dog_name||''))) return false;
+    if(histFilterOwners.size && !ents.some(e=>histFilterOwners.has(e.ownerName||''))) return false;
     return true;
   });
-  cnt.textContent=(q||paidF!=='all'||svcF!=='all')?list.length+' of '+bookings.length+' bookings':bookings.length+' booking'+(bookings.length!==1?'s':'');
+  cnt.textContent=anyFilter?list.length+' of '+bookings.length+' bookings':bookings.length+' booking'+(bookings.length!==1?'s':'');
   if(!list.length){c.innerHTML='<div class="es"><span class="ei">🔍</span><p>No bookings match your filter.</p></div>';return;}
   const fd=s=>new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   const ft=s=>new Date(s).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
@@ -195,3 +233,8 @@ function parseFlexibleDate(v){
   if(m){ d=new Date(+m[3],+m[1]-1,+m[2],+(m[4]||0),+(m[5]||0)); return isNaN(d)?null:d; }
   return null;
 }
+/* Close history filter dropdowns when clicking outside */
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#hist-dd-btn')&&!e.target.closest('#hist-dd-menu')){ histDdOpen=false; const m=document.getElementById('hist-dd-menu'); if(m) m.style.display='none'; const b=document.getElementById('hist-dd-btn'); if(b) b.classList.remove('open'); }
+  if(!e.target.closest('#histo-dd-btn')&&!e.target.closest('#histo-dd-menu')){ histoDdOpen=false; const m=document.getElementById('histo-dd-menu'); if(m) m.style.display='none'; const b=document.getElementById('histo-dd-btn'); if(b) b.classList.remove('open'); }
+});
