@@ -384,3 +384,10 @@ input:focus, select:focus, textarea:focus{ outline:none; }
 .main{ scroll-behavior:smooth; }
 /* Print niceties: hide nav/sidebar when printing anything */
 @media print{ .sb, .bn, .mtb, .notif-wrap{ display:none !important; } }
+
+/* ── Stay Photos gallery ── */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.photo-cell{position:relative;aspect-ratio:1;border-radius:var(--r2);overflow:hidden;background:var(--cream-mid);border:1px solid var(--cream-dark)}
+.photo-cell img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
+.photo-del{position:absolute;top:5px;right:5px;width:26px;height:26px;border:none;border-radius:50%;background:rgba(217,83,79,.92);color:#fff;font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.photo-del:hover{background:var(--danger)}
