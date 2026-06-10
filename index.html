@@ -169,7 +169,7 @@
           </div>
         </div>
         <div class="cal-wrap" id="cal-list-wrap" style="display:none">
-          <div class="cal-header"><div class="cal-title">Upcoming Schedule</div></div>
+          <div class="cal-header"><div class="cal-title">Agenda — Arrivals & Departures</div></div>
           <div id="cal-list-body" style="padding:8px 0"></div>
         </div>
         <div class="card">
@@ -297,6 +297,14 @@
           </div>
         </div>
         <div id="bk-import-result" style="font-size:12px;display:none;margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:13px;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px;position:relative">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" stroke-width="2" style="width:16px;height:16px;position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="hist-search" placeholder="Filter by dog or owner…" oninput="renderHistory()" style="width:100%;height:42px;padding:0 12px 0 36px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;background:var(--white)">
+          </div>
+          <select id="hist-paid" onchange="renderHistory()" style="height:42px;padding:0 12px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--white);outline:none"><option value="all">All</option><option value="paid">Paid only</option><option value="unpaid">Unpaid only</option></select>
+          <select id="hist-svc" onchange="renderHistory()" style="height:42px;padding:0 12px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--white);outline:none"><option value="all">All services</option><option value="boarding">Boarding</option><option value="daycare">Day Care</option></select>
+        </div>
         <div id="hist-wrap"></div>
       </div>
 

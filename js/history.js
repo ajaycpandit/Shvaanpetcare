@@ -3,11 +3,25 @@
 ═══════════════════════════════════════ */
 function renderHistory() {
   const c=document.getElementById('hist-wrap'), cnt=document.getElementById('hist-cnt');
-  cnt.textContent=bookings.length+' booking'+(bookings.length!==1?'s':'');
-  if(!bookings.length){c.innerHTML='<div class="es"><span class="ei">📋</span><p>No bookings saved yet.</p></div>';return;}
+  if(!bookings.length){c.innerHTML='<div class="es"><span class="ei">📋</span><p>No bookings saved yet.</p></div>';cnt.textContent='0 bookings';return;}
+  const q=(document.getElementById('hist-search')?.value||'').toLowerCase().trim();
+  const paidF=document.getElementById('hist-paid')?.value||'all';
+  const svcF=document.getElementById('hist-svc')?.value||'all';
+  let list=bookings.filter(b=>{
+    if(svcF!=='all' && b.service!==svcF) return false;
+    if(paidF==='paid' && !b.paid) return false;
+    if(paidF==='unpaid' && b.paid) return false;
+    if(q){
+      const hay=((b.entries||[]).map(e=>(e.dogName||e.dog_name||'')+' '+(e.ownerName||'')).join(' ')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  cnt.textContent=(q||paidF!=='all'||svcF!=='all')?list.length+' of '+bookings.length+' bookings':bookings.length+' booking'+(bookings.length!==1?'s':'');
+  if(!list.length){c.innerHTML='<div class="es"><span class="ei">🔍</span><p>No bookings match your filter.</p></div>';return;}
   const fd=s=>new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   const ft=s=>new Date(s).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-  c.innerHTML='<div style="display:flex;flex-direction:column;gap:11px">'+bookings.map(b=>{
+  c.innerHTML='<div style="display:flex;flex-direction:column;gap:11px">'+list.map(b=>{
     const entries=b.entries||[];
     const svcPill=b.service==='boarding'?'<span class="sp sp-b">🏡 Boarding</span>':'<span class="sp sp-d">☀️ Day Care</span>';
     const dpills=entries.map(e=>`<div class="hdp"><div class="hdpa">${e.photo?`<img src="${e.photo}" alt="">`:'🐶'}</div><span class="hdn">${esc(e.dogName||e.dog_name||'')}</span></div>`).join('');

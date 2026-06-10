@@ -63,22 +63,41 @@ function setCalView(mode){
 }
 function renderCalList(){
   const body=document.getElementById('cal-list-body');
-  // Group all events by date, from today forward, plus recent past 7 days
-  const evts=calEvents();
-  const byDate={};
-  evts.forEach(e=>{ if(!byDate[e.date]) byDate[e.date]=[]; byDate[e.date].push(e); });
-  const todayS=dStr(new Date());
-  const dates=Object.keys(byDate).filter(d=>d>=todayS).sort();
-  if(!dates.length){ body.innerHTML='<div class="es" style="padding:24px"><span class="ei">📅</span><p>No upcoming scheduled days</p></div>'; return; }
-  const typeIcon={in:'🏡',out:'👋',stay:'🛏️',req:'📩'};
-  const typeLabel={in:'Check-in',out:'Check-out',stay:'Staying',req:'Request'};
+  const now=new Date();
+  const todayS=dStr(now);
+  // Build a per-day agenda: arrivals (check-ins) and departures (check-outs) with times.
+  // Source from confirmed/checked_in reservations (actionable) + completed bookings (record).
+  const agenda={}; // date -> {arrivals:[], departures:[], staying:Set}
+  function ensure(d){ if(!agenda[d]) agenda[d]={arrivals:[],departures:[],staying:0}; return agenda[d]; }
+  // Active reservations (confirmed + checked_in) — these are the actionable ones
+  requests.filter(r=>r.status==='confirmed'||r.status==='checked_in').forEach(r=>{
+    const ci=new Date(r.actual_checkin||r.checkin), co=new Date(r.checkout);
+    ensure(dStr(ci)).arrivals.push({name:r.dog_name, time:ci, req:r});
+    ensure(dStr(co)).departures.push({name:r.dog_name, time:co, req:r});
+    // count staying days
+    let d=new Date(ci.getFullYear(),ci.getMonth(),ci.getDate());
+    const end=new Date(co.getFullYear(),co.getMonth(),co.getDate());
+    while(d<=end){ ensure(dStr(d)).staying++; d.setDate(d.getDate()+1); }
+  });
+  const dates=Object.keys(agenda).filter(d=>d>=todayS).sort().slice(0,30);
+  if(!dates.length){ body.innerHTML='<div class="es" style="padding:24px"><span class="ei">📅</span><p>No upcoming arrivals or departures.<br><span style="font-size:12px">Confirm reservations to see them here.</span></p></div>'; return; }
+  const ft=d=>d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
   body.innerHTML=dates.map(ds=>{
+    const a=agenda[ds];
     const dt=new Date(ds+'T12:00:00');
     const isToday=ds===todayS;
-    const items=byDate[ds].sort((a,b)=>['in','out','stay','req'].indexOf(a.type)-['in','out','stay','req'].indexOf(b.type));
-    return `<div style="padding:11px 18px;border-bottom:1px solid var(--cream-mid)">
-      <div style="font-size:12px;font-weight:700;color:${isToday?'var(--brown-dark)':'var(--ink)'};margin-bottom:7px">${dt.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}${isToday?' · Today':''}</div>
-      ${items.map(e=>`<div onclick="openDayMo('${ds}')" style="display:flex;align-items:center;gap:9px;padding:5px 0;cursor:pointer"><span style="font-size:15px">${typeIcon[e.type]}</span><span style="font-size:12px;font-weight:600;color:var(--ink-faint);min-width:72px">${typeLabel[e.type]}</span><span style="font-size:13px;color:var(--ink)">${esc(e.label.replace(/^(In|Out|Staying|Req|🏠 In): /,''))}</span></div>`).join('')}
+    const arr=a.arrivals.sort((x,y)=>x.time-y.time);
+    const dep=a.departures.sort((x,y)=>x.time-y.time);
+    let rows='';
+    arr.forEach(x=>{ rows+=`<div style="display:flex;align-items:center;gap:10px;padding:6px 0"><span style="font-size:11px;font-weight:600;color:var(--ink-faint);min-width:62px">${ft(x.time)}</span><span class="sp sp-b" style="font-size:10px">🏡 In</span><span style="font-size:13px;color:var(--ink);flex:1;min-width:0">${esc(x.name)}</span>${x.req.status==='confirmed'?`<button class="btn btn-b sm" style="height:28px;padding:0 9px;font-size:11px" onclick="openCheckIn('${x.req.id}')">Check In</button>`:'<span style="font-size:10px;color:var(--forest);font-weight:600">✓ in</span>'}</div>`; });
+    dep.forEach(x=>{ rows+=`<div style="display:flex;align-items:center;gap:10px;padding:6px 0"><span style="font-size:11px;font-weight:600;color:var(--ink-faint);min-width:62px">${ft(x.time)}</span><span class="sp sp-d" style="font-size:10px">👋 Out</span><span style="font-size:13px;color:var(--ink);flex:1;min-width:0">${esc(x.name)}</span>${x.req.status==='checked_in'?`<button class="btn btn-g sm" style="height:28px;padding:0 9px;font-size:11px" onclick="openCheckOut('${x.req.id}')">Check Out</button>`:''}</div>`; });
+    if(!rows) rows='<div style="font-size:12px;color:var(--ink-faint);padding:4px 0">No arrivals or departures</div>';
+    return `<div style="padding:12px 18px;border-bottom:1px solid var(--cream-mid)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:13px;font-weight:700;color:${isToday?'var(--brown-dark)':'var(--ink)'}">${dt.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}${isToday?' · Today':''}</div>
+        <div style="font-size:11px;color:var(--ink-faint)">🛏️ ${a.staying} in-house</div>
+      </div>
+      ${rows}
     </div>`;
   }).join('');
 }
