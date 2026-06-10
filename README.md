@@ -55,3 +55,40 @@ project subfolder on GitHub Pages without changes.
   keep using it while you transition.
 - This structure is the foundation for the next big feature (customer logins + configurable
   staff roles), which will be much safer to build here than in one giant file.
+
+---
+
+## Roles & Customer Logins (added)
+
+The app now supports three roles, loaded from a `profiles` table at login:
+
+- **admin** — sees everything, plus a **Team & Access** panel in Settings.
+- **staff** — sees only the sections you toggle on (Finance & Settings are off by default).
+- **customer** — gets a separate simplified view: their dogs, their reservations,
+  past stays with invoices, and a booking-request form. Scoped to their data by
+  the `owner_name` on their profile.
+
+### Setup
+1. Run **`ROLES_SETUP.sql`** in Supabase (creates the `profiles` table + needed columns).
+2. Log in (you'll be treated as admin on first run, before any profiles exist).
+3. Go to **Settings → Team & Access** to assign roles:
+   - Create each person's login in Supabase (Authentication → Users).
+   - In the Team panel, add them by the **same email**, pick their role, and for
+     staff toggle which sections they can see; for customers enter their **Owner Name**
+     (must exactly match the owner name on their dogs).
+4. Add **yourself as admin** in the Team panel (or via SQL) once you start adding others,
+   so you keep full access.
+
+### New session handling
+Login sessions now auto-refresh before expiry and silently retry on token expiry,
+so the old "JWT expired" interruptions during long sessions are resolved.
+
+### Files added for this feature
+- `js/customer.js` — the customer view
+- `ROLES_SETUP.sql` — database setup
+- Team management lives in `js/settings.js`; role logic in `js/core.js` + `js/init.js`.
+
+> The **final RLS lockdown** (to truly enforce these roles at the database level and
+> isolate customer data) is intentionally left for last, per plan. Ask for that SQL
+> when you're ready — it must be written carefully so customers can't read each
+> other's data.

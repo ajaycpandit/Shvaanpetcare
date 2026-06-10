@@ -2,8 +2,18 @@
    INIT
 ═══════════════════════════════════════ */
 async function init() {
-  setLoadStatus('Loading dogs…');
+  setLoadStatus('Signing in…');
   try {
+    // Load the current user's profile (role + permissions). Falls back to admin if none exists (first-run).
+    if(currentUser && currentUser.email){
+      try{ myProfile = await dbGetMyProfile(currentUser.email); }catch(e){ myProfile=null; }
+    }
+    // If a customer, route to the dedicated customer experience instead of the staff app.
+    if(myProfile && myProfile.role==='customer'){
+      await initCustomer();
+      return;
+    }
+    setLoadStatus('Loading data…');
     [dogs, bookings] = await Promise.all([dbGetDogs(), dbGetBookings()]);
     requests = await dbGetReqs();
     visitNotes = await dbGetNotes();
@@ -16,6 +26,7 @@ async function init() {
     setTimeout(()=>{ document.getElementById('loading').style.display='none'; },400);
     document.getElementById('app-shell').style.display='';
     applyLogo();
+    applyRoleNav();
     const le=document.getElementById('logout-email'); if(le&&currentUser&&currentUser.email) le.textContent=currentUser.email;
     renderDD();
     renderSettings();
@@ -34,6 +45,17 @@ async function init() {
   const today = new Date().toISOString().split('T')[0];
   ['ci-d','co-d','req-ci','req-co'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=today; });
   const n=new Date(); calYear=n.getFullYear(); calMonth=n.getMonth();
+}
+
+/* Show/hide nav items + landing based on role & permissions */
+function applyRoleNav(){
+  SECTIONS.forEach(sec=>{
+    const show=canSee(sec);
+    ['ni-'+sec,'bni-'+sec].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display=show?'':'none'; });
+  });
+  // If the current/landing page isn't visible to this user, jump to the first one they can see.
+  const firstVisible = SECTIONS.find(s=>canSee(s)) || 'dashboard';
+  goPage(firstVisible);
 }
 
 function setLoadStatus(msg) { document.getElementById('load-status').textContent = msg; }

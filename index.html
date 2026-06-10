@@ -30,6 +30,15 @@
   </div>
 </div>
 
+<!-- CUSTOMER SHELL (shown only for role=customer) -->
+<div id="customer-shell" style="display:none;max-width:760px;margin:0 auto;padding:0 16px 60px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--cream-dark);margin-bottom:20px">
+    <img id="logo-customer" alt="Shvaan Pet Care" style="height:48px;width:160px;object-fit:contain;object-position:left">
+    <button onclick="doLogout()" class="btn btn-o sm">Sign out</button>
+  </div>
+  <div id="cust-body"></div>
+</div>
+
 <div class="app" id="app-shell" style="display:none">
   <!-- Desktop sidebar -->
   <aside class="sb">
@@ -383,6 +392,25 @@
             <button class="btn btn-o" onclick="resetSettings()">Reset Defaults</button>
           </div>
         </div>
+        <div class="card" id="team-card" style="display:none">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Team & Access</div>
+          <p style="font-size:12px;color:var(--ink-faint);margin-bottom:14px;line-height:1.6">Set each person\u2019s role and what staff can access. Accounts are created in Supabase (Authentication → Users); here you assign their role &amp; permissions. Admins see everything; customers see only their own dogs.</p>
+          <div id="team-list"></div>
+          <div style="border-top:1px solid var(--cream-dark);margin-top:14px;padding-top:14px">
+            <div style="font-size:12px;font-weight:600;color:var(--ink-mid);margin-bottom:8px">Add / update a person by email</div>
+            <div class="g2" style="margin-bottom:10px">
+              <div class="fd"><label>User Email (must match their Supabase login)</label><input type="email" id="tm-email" placeholder="person@email.com"></div>
+              <div class="fd"><label>Role</label><select id="tm-role" onchange="tmRoleChange()"><option value="staff">Staff</option><option value="admin">Admin</option><option value="customer">Customer</option></select></div>
+            </div>
+            <div class="fd" id="tm-owner-wrap" style="margin-bottom:10px;display:none"><label>Linked Owner Name (for customers — must match their dogs\u2019 owner name exactly)</label><input type="text" id="tm-owner" placeholder="e.g. Sarah Johnson"></div>
+            <div id="tm-perms-wrap" style="margin-bottom:12px">
+              <div style="font-size:12px;font-weight:600;color:var(--ink-mid);margin-bottom:8px">Staff can access:</div>
+              <div id="tm-perms" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+            </div>
+            <button class="btn btn-p" onclick="saveTeamMember()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Save Person</button>
+            <div id="tm-result" style="font-size:12px;margin-top:8px;display:none"></div>
+          </div>
+        </div>
       </div>
 
     </main>
@@ -572,6 +600,7 @@
 
 <script src="js/core.js"></script>
 <script src="js/init.js"></script>
+<script src="js/customer.js"></script>
 <script src="js/dogs.js"></script>
 <script src="js/calculate.js"></script>
 <script src="js/dog-profiles.js"></script>

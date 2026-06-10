@@ -347,3 +347,40 @@ table.bt tr:last-child td{border-bottom:none}
 #loading .lt{font-family:'DM Serif Display',serif;font-size:20px;color:var(--cream)}
 #loading .ls{font-size:12px;color:var(--brown-light);margin-top:6px}
 @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+
+/* ════════════════════════════════════════════════════
+   PROFESSIONAL POLISH PASS (additive — safe enhancements)
+════════════════════════════════════════════════════ */
+/* Constrain ultra-wide screens so content stays readable, centered */
+@media(min-width:1400px){ .main{ } .pg{ margin-left:auto; margin-right:auto; } }
+/* Smoother, more premium card depth + hover lift on desktop */
+@media(min-width:701px){
+  .card{ transition: box-shadow .2s ease, transform .2s ease; }
+  .hi:hover, .di:hover{ transform: translateY(-1px); }
+}
+/* Refined focus ring for accessibility + polish */
+.fd input:focus, .fd select:focus, .fd textarea:focus,
+input:focus, select:focus, textarea:focus{ outline:none; }
+/* Buttons: subtle press feedback + smoother transition */
+.btn{ transition: background .15s ease, border-color .15s ease, transform .08s ease, opacity .15s ease; }
+.btn:active{ transform: scale(.97); }
+/* Nav items: smoother hover */
+.ni{ transition: background .15s ease, color .15s ease; }
+/* Sidebar brand spacing refinement */
+.sb-brand img{ transition: opacity .2s ease; }
+/* Tables: zebra hover for readability on desktop */
+@media(min-width:701px){ table.bt tbody tr:hover{ background: rgba(224,123,46,.04); } }
+/* Crisper modal entrance */
+.mo.on .mo-inner, .inv-ov.on .inv-inner{ animation: moPop .22s ease; }
+@keyframes moPop{ from{ transform: translateY(8px) scale(.99); opacity:.6 } to{ transform:none; opacity:1 } }
+/* Loading screen: gentle fade for logo */
+#loading img{ animation: fadeIn .4s ease; }
+@keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+/* Better empty-state spacing */
+.es{ line-height:1.6; }
+/* Selection color on-brand */
+::selection{ background: rgba(224,123,46,.22); }
+/* Smooth scrolling within scroll containers */
+.main{ scroll-behavior:smooth; }
+/* Print niceties: hide nav/sidebar when printing anything */
+@media print{ .sb, .bn, .mtb, .notif-wrap{ display:none !important; } }
