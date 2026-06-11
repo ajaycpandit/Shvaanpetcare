@@ -58,6 +58,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);l
 .seg{display:flex;background:var(--crm);border:1.5px solid var(--crd);border-radius:14px;padding:4px;gap:4px;margin-bottom:14px}
 .seg button{flex:1;padding:11px;border:none;background:none;border-radius:9px;font-size:15px;font-weight:500;color:var(--inl);cursor:pointer;font-family:'DM Sans',sans-serif}
 .seg button.on{background:var(--wh);color:var(--bd);font-weight:600;box-shadow:0 1px 4px rgba(42,33,26,.1)}
+.breed-wrap{position:relative}
+.breed-dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--wh);border:1.5px solid var(--crd);border-radius:10px;box-shadow:0 4px 16px rgba(42,33,26,.12);z-index:100;max-height:220px;overflow-y:auto;display:none}
+.breed-opt{padding:10px 13px;font-size:15px;cursor:pointer;color:var(--ink)}
+.breed-opt:hover,.breed-opt.focused{background:var(--crm);color:var(--bd)}
 .back-link{display:inline-block;font-size:13px;color:var(--inl);margin-bottom:16px;cursor:pointer;text-decoration:none}
 .back-link:hover{color:var(--br)}
 </style>
@@ -98,7 +102,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);l
       <div class="sec-title">About Your Dog</div>
       <div class="g2">
         <div class="fd"><label>Dog's name <span class="req">*</span></label><input id="mg-dog" placeholder="Buddy"></div>
-        <div class="fd"><label>Breed</label><input id="mg-breed" placeholder="Golden Retriever"></div>
+        <div class="fd"><label>Breed</label><div class="breed-wrap"><input id="mg-breed" placeholder="e.g. Golden Retriever" autocomplete="off" oninput="filterBreeds(this,'mg-breed-dd')" onkeydown="breedKey(event,'mg-breed-dd','mg-breed')"><div class="breed-dd" id="mg-breed-dd"></div></div></div>
       </div>
       <div class="g2">
         <div class="fd"><label>Age</label><input id="mg-age" placeholder="3 years"></div>
@@ -177,7 +181,7 @@ async function submitMG(){
   const phone=document.getElementById('mg-phone').value.trim();
   const email=document.getElementById('mg-email').value.trim();
   document.getElementById('mg-err').style.display='none';
-  if(!dog||!owner||!phone||!email){showErr('mg-err','Please fill in your dog's name, your name, phone, and email.');return;}
+  if(!dog||!owner||!phone||!email){showErr('mg-err',"Please fill in your dog's name, your name, phone, and email.");return;}
   const btn=document.getElementById('mg-submit');btn.disabled=true;btn.textContent='Sending…';
   const rec={
     id:Date.now().toString()+Math.random().toString(36).slice(2),
@@ -200,6 +204,29 @@ async function submitMG(){
     window.scrollTo({top:0,behavior:'smooth'});
   }catch(e){btn.disabled=false;btn.innerHTML='Request Meet &amp; Greet';showErr('mg-err','Sorry, something went wrong: '+e.message+'. Please call us instead.');}
 }
+const BREEDS=['Affenpinscher','Afghan Hound','Airedale Terrier','Akita','Alaskan Malamute','American Bulldog','American Eskimo Dog','American Pitbull Terrier','American Staffordshire Terrier','Anatolian Shepherd','Australian Cattle Dog','Australian Shepherd','Australian Terrier','Basenji','Basset Hound','Beagle','Bearded Collie','Belgian Malinois','Belgian Sheepdog','Belgian Tervuren','Bernese Mountain Dog','Bichon Frise','Border Collie','Border Terrier','Borzoi','Boston Terrier','Boxer','Brittany','Brussels Griffon','Bull Terrier','Bulldog','Bullmastiff','Cairn Terrier','Cane Corso','Cardigan Welsh Corgi','Cavalier King Charles Spaniel','Chesapeake Bay Retriever','Chihuahua','Chinese Crested','Chinese Shar-Pei','Chow Chow','Cocker Spaniel','Collie','Dachshund','Dalmatian','Doberman Pinscher','French Bulldog','German Shepherd','German Shorthaired Pointer','Golden Retriever','Great Dane','Great Pyrenees','Greyhound','Havanese','Irish Setter','Italian Greyhound','Jack Russell Terrier','Labrador Retriever','Lhasa Apso','Maltese','Mastiff','Miniature Pinscher','Miniature Schnauzer','Mixed Breed','Newfoundland','Old English Sheepdog','Papillon','Pekingese','Pembroke Welsh Corgi','Pomeranian','Poodle (Miniature)','Poodle (Standard)','Poodle (Toy)','Portuguese Water Dog','Pug','Rhodesian Ridgeback','Rottweiler','Saint Bernard','Samoyed','Scottish Terrier','Shetland Sheepdog','Shiba Inu','Shih Tzu','Siberian Husky','Staffordshire Bull Terrier','Vizsla','Weimaraner','West Highland White Terrier','Whippet','Yorkshire Terrier'];
+let breedFocusIdx=-1;
+function filterBreeds(inp,ddId){
+  const q=inp.value.toLowerCase().trim(),dd=document.getElementById(ddId);
+  breedFocusIdx=-1;
+  if(!q){dd.style.display='none';return;}
+  const m=BREEDS.filter(b=>b.toLowerCase().includes(q)).slice(0,10);
+  if(!m.length){dd.style.display='none';return;}
+  dd.innerHTML=m.map((b,i)=>`<div class="breed-opt" data-idx="${i}" onclick="selectBreed('${b.replace(/'/g,"\\'")}','mg-breed','${ddId}')">${b}</div>`).join('');
+  dd.style.display='block';
+}
+function selectBreed(b,inputId,ddId){document.getElementById(inputId).value=b;document.getElementById(ddId).style.display='none';breedFocusIdx=-1;}
+function breedKey(e,ddId,inputId){
+  const dd=document.getElementById(ddId),opts=dd.querySelectorAll('.breed-opt');
+  if(!opts.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();breedFocusIdx=Math.min(breedFocusIdx+1,opts.length-1);}
+  else if(e.key==='ArrowUp'){e.preventDefault();breedFocusIdx=Math.max(breedFocusIdx-1,0);}
+  else if(e.key==='Enter'&&breedFocusIdx>=0){e.preventDefault();opts[breedFocusIdx].click();return;}
+  else if(e.key==='Escape'){dd.style.display='none';return;}
+  opts.forEach((o,i)=>o.classList.toggle('focused',i===breedFocusIdx));
+  if(breedFocusIdx>=0)opts[breedFocusIdx].scrollIntoView({block:'nearest'});
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.breed-wrap')){const d=document.getElementById('mg-breed-dd');if(d)d.style.display='none';}});
 </script>
 </body>
 </html>
