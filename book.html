@@ -114,7 +114,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);l
         <div class="fd"><label>Email <span class="req">*</span></label><input id="mg-email" type="email" placeholder="you@email.com"></div>
       </div>
       <div class="sec-title">Service Interest</div>
-      <div class="seg"><button type="button" class="on" id="mg-seg-b" onclick="setMgSvc('boarding')">🏡 Boarding</button><button type="button" id="mg-seg-d" onclick="setMgSvc('daycare')">☀️ Day Care</button><button type="button" id="mg-seg-both" onclick="setMgSvc('both')">Both</button></div>
+      <div class="seg"><button type="button" class="on" id="mg-seg-boarding" onclick="setMgSvc('boarding')">🏡 Boarding</button><button type="button" id="mg-seg-daycare" onclick="setMgSvc('daycare')">☀️ Day Care</button><button type="button" id="mg-seg-both" onclick="setMgSvc('both')">Both</button></div>
       <div class="fd"><label>Anything else you'd like us to know?</label><textarea id="mg-notes" rows="2" placeholder="Medications, dietary needs, previous boarding experience…"></textarea></div>
       <button class="btn" id="mg-submit" onclick="submitMG()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
@@ -169,7 +169,7 @@ function goBack(){
   document.getElementById('panel-returning').classList.remove('on');
   window.scrollTo({top:0,behavior:'smooth'});
 }
-function setMgSvc(s){mgSvc=s;['b','d','both'].forEach(k=>document.getElementById('mg-seg-'+k).classList.toggle('on',k===s));}
+function setMgSvc(s){mgSvc=s;['boarding','daycare','both'].forEach(k=>document.getElementById('mg-seg-'+k).classList.toggle('on',k===s));}
 function showErr(id,m){const e=document.getElementById(id);e.textContent=m;e.style.display='block';e.scrollIntoView({behavior:'smooth',block:'center'});}
 async function submitMG(){
   const dog=document.getElementById('mg-dog').value.trim();
