@@ -16,20 +16,53 @@ html{font-size:16px;scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;line-height:1.6}
 
 /* ── Layout ── */
-.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
-.sb{background:var(--brown-dark);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-.sb-brand{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
-.sb-paw{font-size:26px;display:block;margin-bottom:4px}
-.sb-name{font-family:'DM Serif Display',serif;font-size:18px;color:var(--cream);line-height:1.1}
-.sb-tag{font-size:10px;color:var(--brown-light);margin-top:3px;letter-spacing:.06em;text-transform:uppercase}
-.sb-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px}
-.ni{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r2);cursor:pointer;font-size:14px;font-weight:400;color:var(--brown-light);transition:background .15s,color .15s;border:none;background:none;text-align:left;width:100%;font-family:'DM Sans',sans-serif;min-height:44px}
-.ni:hover{background:rgba(255,255,255,.07);color:var(--cream)}
-.ni.active{background:rgba(255,255,255,.13);color:var(--cream);font-weight:600}
-.ni svg{width:18px;height:18px;flex-shrink:0;opacity:.8}
+.app{display:flex;flex-direction:column;min-height:100vh}
+/* top nav */
+.topnav{background:var(--brown-dark);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:56px;position:sticky;top:0;z-index:300;gap:16px}
+.tn-left{display:flex;align-items:center;gap:0;min-width:0;flex:1}
+.tn-logo{height:38px;width:120px;object-fit:contain;background:white;border-radius:6px;padding:4px 8px;flex-shrink:0;margin-right:14px}
+.tn-nav{display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tn-nav::-webkit-scrollbar{display:none}
+.tn-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.tn-notif-btn{background:none;width:36px;height:36px}
+.tn-notif-btn svg{color:var(--brown-light)}
+.tn-logout{display:flex;align-items:center;gap:5px;background:none;border:1px solid rgba(255,255,255,.15);border-radius:var(--r2);padding:6px 11px;cursor:pointer;color:rgba(255,255,255,.65);font-family:'DM Sans',sans-serif;font-size:12px;white-space:nowrap;transition:background .15s}
+.tn-logout:hover{background:rgba(255,255,255,.08);color:var(--cream)}
+
+/* nav items in top nav */
+.tn-nav{display:flex;align-items:stretch;gap:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tn-nav::-webkit-scrollbar{display:none}
+.ni{display:flex;align-items:center;gap:7px;padding:0 11px;height:56px;border-radius:0;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.78);transition:color .15s,border-color .15s;border:none;border-bottom:3px solid transparent;background:none;white-space:nowrap;font-family:'DM Sans',sans-serif;position:relative}
+.ni:hover{color:#fff;background:rgba(255,255,255,.07)}
+.ni.active{color:#fff;font-weight:600;border-bottom-color:var(--brown-light)}
+.ni svg{width:15px;height:15px;flex-shrink:0;opacity:.75}
 .ni.active svg{opacity:1}
-.ni{position:relative}
-.ni-badge{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--danger);color:white;border-radius:99px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center}
+.ni-badge{position:absolute;top:10px;right:4px;background:var(--danger);color:white;border-radius:99px;font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center}
+.ni-sep{width:1px;background:rgba(255,255,255,.14);margin:12px 6px;flex-shrink:0}
+.ni-util{opacity:.72;font-size:12px}
+
+/* app body: main + right panel */
+.app-body{display:flex;flex:1;align-items:flex-start;flex-direction:row;min-height:calc(100vh - 56px)}
+
+/* right panel */
+.right-panel{width:220px;flex-shrink:0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;background:var(--white);border-left:1px solid var(--cream-dark);padding:16px 14px;display:flex;flex-direction:column;gap:0;align-self:flex-start}
+.rp-section{margin-bottom:20px}
+.rp-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);margin-bottom:8px}
+.rp-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.rp-stat{background:var(--cream-mid);border-radius:var(--r2);padding:9px 10px;text-align:center}
+.rp-stat-num{font-size:22px;font-weight:700;color:var(--brown-dark);line-height:1}
+.rp-stat-lbl{font-size:10px;color:var(--ink-faint);margin-top:3px}
+.rp-list{display:flex;flex-direction:column;gap:5px}
+.rp-item{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--cream-mid);border-radius:var(--r2);font-size:12px;color:var(--ink-mid);cursor:pointer;transition:background .12s}
+.rp-item:hover{background:var(--cream-dark)}
+.rp-item-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.rp-item-dot.in{background:#6A8F6B}
+.rp-item-dot.out{background:var(--gold)}
+.rp-item-dot.soon{background:var(--blue)}
+.rp-empty{font-size:12px;color:var(--ink-faint);font-style:italic;padding:4px 2px}
+
+/* sidebar legacy (keep for any refs) */
+.sb-foot{padding:14px 20px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:rgba(196,168,130,.5);text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
 .bni{position:relative}
 .bni-badge{position:absolute;top:6px;right:calc(50% - 18px);background:var(--danger);color:white;border-radius:99px;font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center}
 :root{--blue:#1A56A0;--bluep:#EBF2FB}
@@ -120,15 +153,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);m
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .mtb{display:none}
 .bn{display:none}
-.main{overflow-y:auto;overflow-x:hidden}
+.main{flex:1;min-width:0;overflow-y:auto;overflow-x:hidden}
 .pg{display:none;padding:36px 44px;max-width:860px;animation:fi .18s ease}
 .pg.active{display:block}
 @keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 
 /* ── Mobile ── */
 @media(max-width:700px){
-  .app{grid-template-columns:1fr;min-height:100dvh}
-  .sb{display:none}
+  .app{min-height:100dvh}
+  .topnav{display:none}
+  .right-panel{display:none}
+  .app-body{display:block}
   .mtb{display:flex;align-items:center;justify-content:space-between;background:var(--brown-dark);padding:13px 16px;padding-top:calc(13px + env(safe-area-inset-top));position:sticky;top:0;z-index:100}
   .mtb-name{font-family:'DM Serif Display',serif;font-size:17px;color:var(--cream)}
   .mtb-sync{font-size:11px;color:var(--brown-light);display:flex;align-items:center;gap:5px}
@@ -342,7 +377,7 @@ table.bt tr:last-child td{border-bottom:none}
 }
 
 /* ── Loading overlay ── */
-#loading{position:fixed;inset:0;background:var(--brown-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s}
+#loading{position:fixed;inset:0;background:var(--brown-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:background .3s,opacity .4s}
 #loading .lp{font-size:40px;margin-bottom:14px;animation:bounce .8s infinite alternate}
 #loading .lt{font-family:'DM Serif Display',serif;font-size:20px;color:var(--cream)}
 #loading .ls{font-size:12px;color:var(--brown-light);margin-top:6px}
@@ -383,7 +418,7 @@ input:focus, select:focus, textarea:focus{ outline:none; }
 /* Smooth scrolling within scroll containers */
 .main{ scroll-behavior:smooth; }
 /* Print niceties: hide nav/sidebar when printing anything */
-@media print{ .sb, .bn, .mtb, .notif-wrap{ display:none !important; } }
+@media print{ .topnav, .right-panel, .bn, .mtb, .notif-wrap{ display:none !important; } }
 
 /* ── Stay Photos gallery ── */
 .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
@@ -391,3 +426,49 @@ input:focus, select:focus, textarea:focus{ outline:none; }
 .photo-cell img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
 .photo-del{position:absolute;top:5px;right:5px;width:26px;height:26px;border:none;border-radius:50%;background:rgba(217,83,79,.92);color:#fff;font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .photo-del:hover{background:var(--danger)}
+
+/* ── Look & feel improvements ── */
+
+/* Card hover lift on all cards, not just hi/di */
+@media(min-width:701px){
+  .card:hover{box-shadow:0 4px 20px rgba(42,33,26,.10);transform:translateY(-1px)}
+  .card{transition:box-shadow .2s ease,transform .2s ease}
+}
+
+/* Page transition — smoother fade+slide between sections */
+@keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pg.active{animation:pgIn .2s ease}
+
+/* Section headers inside cards — cleaner divider treatment */
+.ss{padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--cream-dark)}
+.ss:last-child{padding-bottom:0;margin-bottom:0;border-bottom:none}
+.ss h3{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+
+/* Right panel items — warmer hover */
+.rp-item:hover{background:var(--cream-dark);color:var(--ink)}
+
+/* Stat tiles in right panel — themed number colour */
+.rp-stat-num{color:var(--brown-dark)}
+
+/* Better badge/tag styling for role chips in team list */
+.role-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:capitalize}
+.role-admin{background:var(--coral-pale);color:var(--coral)}
+.role-staff{background:var(--forest-pale);color:var(--forest)}
+.role-customer{background:#E6F1FB;color:#185FA5}
+
+/* Nicer empty states */
+.es{background:var(--cream-mid);border-radius:var(--r3);padding:40px 20px;border:1px dashed var(--cream-dark)}
+.es .ei{font-size:36px;margin-bottom:8px;display:block;opacity:.7}
+.es p{font-size:13px;color:var(--ink-faint);line-height:1.6}
+
+/* Input focus glow uses theme colour */
+.fd input:focus,.fd select:focus,.fd textarea:focus{
+  border-color:var(--brown)!important;
+  box-shadow:0 0 0 3px rgba(var(--brown-rgb,200,94,24),.12)!important;
+}
+
+/* Smoother modal backdrop */
+.mo{backdrop-filter:blur(2px)}
+
+/* Rate change note pill */
+.rc-pill{background:var(--forest-pale);color:var(--forest);font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px}

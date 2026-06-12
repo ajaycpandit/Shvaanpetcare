@@ -236,13 +236,37 @@ async function saveEditDog(){
     traits:{ temperament:document.getElementById('e-t-temp').value, social:document.getElementById('e-t-social').value, energy:document.getElementById('e-t-energy').value, play:document.getElementById('e-t-play').value, eating:document.getElementById('e-t-eat').value, handling:document.getElementById('e-t-handling').value.trim() }
   };
   if(editPendingPhoto) upd.photo=editPendingPhoto;
+  // ── Rate change history ──────────────────────────────────────
+  const existing=dogs.find(x=>x.id===editingDogId);
+  const oldRate=existing?existing.rate_override:null;
+  const newRate=upd.rate_override;
+  const rateChanged=(oldRate!==newRate)&&!(oldRate==null&&newRate==null);
+  // ────────────────────────────────────────────────────────────
   setSyncState('busy');
   try{
     if(editPendingVaccFile){ try{ upd.vacc_file_url=await uploadVaccFile(editingDogId, editPendingVaccFile); }catch(fe){ console.warn(fe); toast('Saved, but vaccine file upload failed.', true); } }
     await dbUpdateDog(editingDogId, upd);
+    // Log rate change to visit_notes
+    if(rateChanged){
+      const oldFmt=oldRate!=null?'$'+parseFloat(oldRate).toFixed(2)+'/night':'default rate';
+      const newFmt=newRate!=null?'$'+parseFloat(newRate).toFixed(2)+'/night':'default rate';
+      const noteText=`Rate changed: ${oldFmt} → ${newFmt}`;
+      await dbAddNote({
+        id: Date.now().toString()+Math.random().toString(36).slice(2,6),
+        dog_id: editingDogId,
+        dog_name: name,
+        note: noteText,
+        note_type: 'rate_change',
+        old_rate: oldRate,
+        new_rate: newRate,
+        created_by: currentUser?currentUser.email:'unknown',
+        created_at: new Date().toISOString()
+      }).catch(()=>{}); // non-blocking — don't fail the save if note fails
+    }
     const d=dogs.find(x=>x.id===editingDogId); if(d) Object.assign(d, upd);
     setSyncState('ok');
-    closeEditMo(); renderDogList(); renderDD(); renderReqDD(); updateBadges(); toast('Profile updated!');
+    closeEditMo(); renderDogList(); renderDD(); renderReqDD(); updateBadges();
+    toast(rateChanged?'Profile updated with rate change logged!':'Profile updated!');
   }catch(e){ setSyncState('err'); toast('Error: '+e.message, true); }
 }
 let dogHistId=null;
@@ -295,6 +319,23 @@ function renderDogHistBody(){
   body.innerHTML=html;
 }
 function noteRow(n){
+  // Rate change entries get a distinct visual treatment
+  if(n.note_type==='rate_change'){
+    const dt=new Date(n.created_at);
+    const oldFmt=n.old_rate!=null?'$'+parseFloat(n.old_rate).toFixed(2):' default';
+    const newFmt=n.new_rate!=null?'$'+parseFloat(n.new_rate).toFixed(2):' default';
+    const isUp=n.new_rate!=null&&(n.old_rate==null||n.new_rate>n.old_rate);
+    const isDn=n.new_rate!=null&&n.old_rate!=null&&n.new_rate<n.old_rate;
+    const arrow=isUp?'↑':isDn?'↓':'↔';
+    const arrowColor=isUp?'var(--forest)':isDn?'var(--danger)':'var(--ink-light)';
+    return `<div style="border:1px solid var(--cream-dark);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:7px;background:var(--cream-mid)">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--forest-pale);color:var(--forest)">💰 Rate Change</span>
+        <span style="font-size:13px;font-weight:600;color:${arrowColor}">${arrow} ${oldFmt} → ${newFmt}/night</span>
+      </div>
+      <div style="font-size:11px;color:var(--ink-faint);margin-top:3px">${dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} at ${dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${esc(n.created_by||'Staff')}</div>
+    </div>`;
+  }
   const dt=new Date(n.created_at);
   const catColor={Feeding:'var(--gold-pale)',Behavior:'#FCEEEA',Health:'var(--danger-pale)',Social:'#E6F2F0',General:'var(--cream-mid)'}[n.category]||'var(--cream-mid)';
   return `<div style="border:1px solid ${n.flagged?'#EAB0AC':'var(--cream-dark)'};border-radius:var(--radius-md);padding:10px 12px;margin-bottom:7px;background:${n.flagged?'var(--danger-pale)':'var(--white)'}">
