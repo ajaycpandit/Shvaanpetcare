@@ -4,10 +4,8 @@
 function renderSettings() {
   const s=settings;
   document.getElementById('s-br').value=s.boardingRate; document.getElementById('s-dc').value=s.daycareRate;
-  document.getElementById('s-th').value=s.threshold; document.getElementById('s-pc').value=s.surchargePct;
-  document.getElementById('s-sc-type').value=s.surchargeType||'percent';
-  document.getElementById('s-sa').value=s.surchargeAmt||25;
-  toggleSurchargeFields();
+  document.getElementById('s-th').value=s.threshold;
+  const spc=document.getElementById('s-pc'); if(spc) spc.value=s.surchargePct;
   document.getElementById('s-bn').value=s.bizName||''; document.getElementById('s-bp').value=s.bizPhone||'';
   document.getElementById('s-be').value=s.bizEmail||''; document.getElementById('s-ba').value=s.bizAddr||'';
   document.getElementById('s-cap').value=s.capacity||12;
@@ -15,9 +13,86 @@ function renderSettings() {
   updateScPrev();
   if(typeof renderRoleTemplates === 'function') renderRoleTemplates();
   if(typeof updateThemeSettingsRow === 'function') updateThemeSettingsRow();
+  
+  // Render surcharge settings directly
+  setTimeout(() => {
+    const surchargeDiv = document.getElementById('settings-surcharge');
+    if(surchargeDiv){
+      const sType = (settings && settings.surchargeType) ? settings.surchargeType : 'percent';
+      const sPct = (settings && settings.surchargePct) ? settings.surchargePct : 25;
+      const sAmt = (settings && settings.surchargeAmt) ? settings.surchargeAmt : 15;
+      
+      let html = '<div style="margin-top:12px;padding:12px;background:var(--cream-mid);border-radius:8px">';
+      html += '<label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Surcharge Type</label>';
+      html += '<div style="display:flex;gap:10px;margin-bottom:12px">';
+      html += '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1">';
+      html += '<input type="radio" name="surcharge-type" value="percent" ' + (sType==='percent'?'checked':'') + ' onchange="changeSurcharge(\'percent\')">';
+      html += '<span>Percentage (%)</span>';
+      html += '</label>';
+      html += '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1">';
+      html += '<input type="radio" name="surcharge-type" value="fixed" ' + (sType==='fixed'?'checked':'') + ' onchange="changeSurcharge(\'fixed\')">';
+      html += '<span>Fixed Amount ($)</span>';
+      html += '</label>';
+      html += '</div>';
+      html += '<label style="display:block;margin-bottom:4px;font-size:13px;font-weight:600">' + (sType==='percent'?'Surcharge %':'Surcharge Amount ($)') + '</label>';
+      html += '<input type="number" id="surcharge-val" value="' + (sType==='percent'?sPct:sAmt) + '" ';
+      html += (sType==='percent'?'step="1"':'step="0.01"') + ' min="0" ';
+      html += 'style="width:100%;padding:8px;border:1px solid var(--cream-dark);border-radius:6px;font-family:inherit;font-size:14px" ';
+      html += 'onchange="updateSurcharge(this.value)">';
+      html += '<small style="display:block;margin-top:4px;color:var(--ink-faint);font-size:12px">' + (sType==='percent'?'% of daily rate':'$ per surcharge') + '</small>';
+      html += '</div>';
+      
+      surchargeDiv.innerHTML = html;
+    }
+  }, 10);
+  
   // Team management — admin only
   const tc=document.getElementById('team-card');
   if(tc){ if(isAdmin()){ tc.style.display=''; renderTeamList(); tmRenderPerms(); tmRoleChange(); } else { tc.style.display='none'; } }
+  if(typeof renderTrendToggles==='function') renderTrendToggles();
+}
+
+// Dashboard trend enable/disable toggles
+function renderTrendToggles(){
+  const host=document.getElementById('settings-trends');
+  if(!host || typeof TREND_CATALOG==='undefined') return;
+  const enabled=(settings && settings.trendsEnabled) ? settings.trendsEnabled : {};
+  host.innerHTML = TREND_CATALOG.map(function(t){
+    const key=t[0], label=t[1], desc=t[2];
+    const on = enabled[key] !== false;
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--cream-mid)">'
+      + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">'+esc(label)+'</div><div style="font-size:11px;color:var(--ink-faint)">'+esc(desc)+'</div></div>'
+      + '<label class="switch" style="position:relative;display:inline-block;width:42px;height:24px;flex:none">'
+      + '<input type="checkbox" '+(on?'checked':'')+' onchange="toggleTrend(\''+key+'\',this.checked)" style="opacity:0;width:0;height:0">'
+      + '<span style="position:absolute;cursor:pointer;inset:0;background:'+(on?'var(--brown)':'var(--cream-dark)')+';border-radius:24px;transition:.2s"><span style="position:absolute;height:18px;width:18px;left:'+(on?'21px':'3px')+';top:3px;background:#fff;border-radius:50%;transition:.2s"></span></span>'
+      + '</label></div>';
+  }).join('');
+}
+
+async function toggleTrend(key, on){
+  if(!settings.trendsEnabled) settings.trendsEnabled={};
+  settings.trendsEnabled[key]=on;
+  renderTrendToggles();
+  setSyncState('busy');
+  try{ await dbSaveSettings(settings); setSyncState('ok'); }
+  catch(e){ setSyncState('err'); }
+}
+
+function changeSurcharge(type){
+  if(settings){
+    settings.surchargeType = type;
+    dbSaveSettings(settings).catch(function(){});
+    renderSettings();
+  }
+}
+
+function updateSurcharge(val){
+  if(settings){
+    const num = parseFloat(val) || 0;
+    const key = settings.surchargeType === 'percent' ? 'surchargePct' : 'surchargeAmt';
+    settings[key] = num;
+    dbSaveSettings(settings).catch(function(){});
+  }
 }
 
 /* ── Role templates ───────────────────────────────────────── */
@@ -143,32 +218,36 @@ function handleLogoFile(input){
 }
 function resetLogo(){ pendingLogo='__default__'; const lp=document.getElementById('logo-preview'); if(lp) lp.src=DEFAULT_LOGO; toast('Will reset to default logo on Save.'); }
 function updateScPrev() {
-  const t=parseFloat(document.getElementById('s-th').value)||3, p=parseFloat(document.getElementById('s-pc').value)||50, r=parseFloat(document.getElementById('s-br').value)||55;
-  document.getElementById('sc-prev').innerHTML=`<strong>Rule:</strong> If check-out is more than <strong>${t} hour${t!==1?'s':''}</strong> past a full 24h period, a surcharge of <strong>${p}%</strong> ($${(r*p/100).toFixed(2)}) is added.`;
+  const scp=document.getElementById('sc-prev'); if(!scp) return;
+  const t=parseFloat((document.getElementById('s-th')||{}).value)||3;
+  const r=parseFloat((document.getElementById('s-br')||{}).value)||55;
+  const sType=(settings&&settings.surchargeType)?settings.surchargeType:'percent';
+  if(sType==='fixed'){
+    const amt=(settings&&settings.surchargeAmt)?settings.surchargeAmt:15;
+    scp.innerHTML=`<strong>Rule:</strong> If check-out is more than <strong>${t} hour${t!==1?'s':''}</strong> past a full 24h period, a fixed surcharge of <strong>$${Number(amt).toFixed(2)}</strong> is added.`;
+  } else {
+    const p=(settings&&settings.surchargePct)?settings.surchargePct:25;
+    scp.innerHTML=`<strong>Rule:</strong> If check-out is more than <strong>${t} hour${t!==1?'s':''}</strong> past a full 24h period, a surcharge of <strong>${p}%</strong> ($${(r*p/100).toFixed(2)}) is added.`;
+  }
 }
-['s-th','s-pc','s-br'].forEach(id=>document.getElementById(id).addEventListener('input',updateScPrev));
-
-function toggleSurchargeFields() {
-  const t = document.getElementById('s-sc-type').value;
-  document.getElementById('s-pc-wrap').style.display = t==='percent' ? '' : 'none';
-  document.getElementById('s-sa-wrap').style.display = t==='fixed' ? '' : 'none';
-}
+['s-th','s-pc','s-br'].forEach(id=>{const el=document.getElementById(id); if(el) el.addEventListener('input',updateScPrev);});
 
 async function saveSettings() {
   settings={
     boardingRate:parseFloat(document.getElementById('s-br').value)||DEF.boardingRate,
     daycareRate:parseFloat(document.getElementById('s-dc').value)||DEF.daycareRate,
     threshold:parseFloat(document.getElementById('s-th').value)||DEF.threshold,
-    surchargePct:parseFloat(document.getElementById('s-pc').value)||DEF.surchargePct,
-    surchargeType:document.getElementById('s-sc-type').value||'percent',
-    surchargeAmt:parseFloat(document.getElementById('s-sa').value)||DEF.surchargeAmt,
+    surchargePct:parseFloat((document.getElementById('s-pc')||{}).value)||(settings&&settings.surchargePct)||DEF.surchargePct,
+    surchargeType:(settings&&settings.surchargeType)||'percent',
+    surchargeAmt:(settings&&settings.surchargeAmt)||DEF.surchargeAmt||15,
     bizName:document.getElementById('s-bn').value.trim()||DEF.bizName,
     bizPhone:document.getElementById('s-bp').value.trim(),
     bizEmail:document.getElementById('s-be').value.trim(),
     bizAddr:document.getElementById('s-ba').value.trim(),
     capacity:parseInt(document.getElementById('s-cap').value)||DEF.capacity,
     logo: pendingLogo==='__default__' ? null : (pendingLogo || settings.logo || null),
-    theme: settings.theme || 'terracotta'
+    theme: settings.theme || 'terracotta',
+    trendsEnabled: settings.trendsEnabled || {}
   };
   setSyncState('busy');
   try { await dbSaveSettings(settings); try{ if(settings.logo) localStorage.setItem('shvaan_logo', settings.logo); else localStorage.removeItem('shvaan_logo'); }catch(e){} pendingLogo=null; applyLogo(); setSyncState('ok'); toast('Settings saved!'); recalc(); }
@@ -188,3 +267,9 @@ async function resetSettings() {
    UTILS
 ═══════════════════════════════════════ */
 function esc(s){ if(!s)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Collapsible settings accordion
+function toggleAcc(id){
+  const el = document.getElementById(id);
+  if(el) el.classList.toggle('open');
+}

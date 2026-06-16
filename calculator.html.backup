@@ -65,7 +65,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);l
 <body>
 <div class="topbar">
   <a class="back" href="index.html">← Back to Shvaan Pet Care</a>
-  <a class="cta" href="meet-greet.html">Schedule a Meet &amp; Greet</a>
+  <a class="cta" href="book.html">Schedule a Meet &amp; Greet</a>
 </div>
 
 <div class="wrap">
@@ -102,7 +102,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);l
   <div class="cta-band">
     <h2>Like what you see?</h2>
     <p>New clients start with a free meet &amp; greet so we can get to know your pup.</p>
-    <a href="meet-greet.html">Schedule a Meet &amp; Greet</a>
+    <a href="book.html">Schedule a Meet &amp; Greet</a>
   </div>
 </div>
 
@@ -138,8 +138,7 @@ function calcOne(i,o){
     return {rate:rate, fullDays:days, extraHrs:0, surcharge:0, total:+(rate*days).toFixed(2)};
   }
   var full=Math.floor(hrs/24), rem=hrs-full*24;
-  // FIXED: Only apply surcharge if full>=1 AND rem>threshold
-  var sur = (full>=1 && rem>THRESHOLD_HRS) ? +(rate*SURCHARGE_PCT/100).toFixed(2) : 0;
+  var sur = rem>THRESHOLD_HRS ? +(rate*SURCHARGE_PCT/100).toFixed(2) : 0;
   var total = +((full===0&&rem>0 ? rate : rate*full)+sur).toFixed(2);
   return {rate:rate, fullDays:full, extraHrs:+rem.toFixed(2), surcharge:sur, total:total};
 }

@@ -31,14 +31,11 @@ function renderDashboard(){
   const overdue=onSite.filter(r=>new Date(r.checkout)<now);
   const noVacc=onSite.filter(r=>{ const exp=v=>v&&new Date(v)<now; return reqDogIds(r).some(id=>{ const d=dogs.find(x=>x.id===id); return d&&(exp(d.vacc_rabies)||exp(d.vacc_dhpp)||exp(d.vacc_bordetella)); }); });
   const att=[];
-  if(overdue.length) att.push(`<a style="cursor:pointer;text-decoration:underline" onclick="goPage('requests')">${overdue.length} overdue checkout${overdue.length!==1?'s':''}</a>`);
-  if(pending) att.push(`<a style="cursor:pointer;text-decoration:underline" onclick="goPage('requests')">${pending} pending request${pending!==1?'s':''}</a>`);
-  if(noVacc.length) att.push(`<a style="cursor:pointer;text-decoration:underline" onclick="goPage('dogs')">${noVacc.length} on-site dog${noVacc.length!==1?'s':''} with expired vaccines</a>`);
-  if(onSite.length>cap) att.push(`<span>Over capacity by ${onSite.length-cap}</span>`);
-  // Unpaid invoices
-  const unpaid=bookings.filter(b=>!b.paid);
-  if(unpaid.length) att.push(`<a style="cursor:pointer;text-decoration:underline" onclick="goPage('finance')">${unpaid.length} unpaid invoice${unpaid.length!==1?'s':''}</a>`);
-  document.getElementById('dash-attention').innerHTML = att.length?`<div class="card" style="border-color:#EAB0AC;background:var(--danger-pale);margin-bottom:14px"><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span style="font-size:18px">⚠️</span><div style="font-size:13px;color:var(--danger);font-weight:600;display:flex;gap:6px;flex-wrap:wrap;align-items:center">Needs attention: ${att.join(' <span style="opacity:.5">·</span> ')}</div></div></div>`:'';
+  if(overdue.length) att.push(`${overdue.length} overdue checkout${overdue.length!==1?'s':''}`);
+  if(pending) att.push(`${pending} pending request${pending!==1?'s':''}`);
+  if(noVacc.length) att.push(`${noVacc.length} on-site dog${noVacc.length!==1?'s':''} with expired vaccines`);
+  if(onSite.length>cap) att.push(`Over capacity by ${onSite.length-cap}`);
+  document.getElementById('dash-attention').innerHTML = att.length?`<div class="card" style="border-color:#EAB0AC;background:var(--danger-pale);margin-bottom:14px"><div style="display:flex;align-items:center;gap:9px"><span style="font-size:18px">⚠️</span><div style="font-size:13px;color:var(--danger);font-weight:600">Needs attention: ${att.join(' · ')}</div></div></div>`:'';
 
   // KPI cards
   const kpi=(label,val,sub,color)=>`<div class="card" style="margin:0;padding:16px 14px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint)">${label}</div><div style="font-family:'DM Serif Display',serif;font-size:26px;color:${color||'var(--ink)'};margin-top:3px;line-height:1.1">${val}</div>${sub?`<div style="font-size:11px;color:var(--ink-faint);margin-top:3px">${sub}</div>`:''}</div>`;
@@ -51,12 +48,12 @@ function renderDashboard(){
   // Ops: arrivals & departures with actions
   const arrRow=arrivals.length?arrivals.map(r=>{
     const dog=dogs.find(x=>x.id===r.dog_id);
-    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--cream-mid);cursor:pointer" onclick="openResDetail('${r.id}')"><div class="dd-ava" style="width:30px;height:30px;font-size:14px">${dog&&dog.photo?`<img src="${dog.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(r.dog_name)}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(r.checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${r.service==='boarding'?'Boarding':'Day Care'}</div></div><button class="btn btn-b sm" onclick="event.stopPropagation();openCheckIn('${r.id}')">Check In</button></div>`;
+    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--cream-mid)"><div class="dd-ava" style="width:30px;height:30px;font-size:14px">${dog&&dog.photo?`<img src="${dog.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(r.dog_name)}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(r.checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${r.service==='boarding'?'Boarding':'Day Care'}</div></div><button class="btn btn-b sm" onclick="openCheckIn('${r.id}')">Check In</button></div>`;
   }).join(''):'<div style="font-size:12px;color:var(--ink-faint);padding:10px 0">No arrivals scheduled today 🐾</div>';
   const depRow=departures.length?departures.map(r=>{
     const dog=dogs.find(x=>x.id===r.dog_id);
     const overdueTag=new Date(r.checkout)<now?' <span class="bdg bdg-r" style="background:var(--danger-pale);color:var(--danger);border:1px solid #EAB0AC">overdue</span>':'';
-    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--cream-mid);cursor:pointer" onclick="openResDetail('${r.id}')"><div class="dd-ava" style="width:30px;height:30px;font-size:14px">${dog&&dog.photo?`<img src="${dog.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(r.dog_name)}${overdueTag}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(r.checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div></div><button class="btn btn-g sm" onclick="event.stopPropagation();openCheckOut('${r.id}')">Check Out</button></div>`;
+    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--cream-mid)"><div class="dd-ava" style="width:30px;height:30px;font-size:14px">${dog&&dog.photo?`<img src="${dog.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(r.dog_name)}${overdueTag}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(r.checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div></div><button class="btn btn-g sm" onclick="openCheckOut('${r.id}')">Check Out</button></div>`;
   }).join(''):'<div style="font-size:12px;color:var(--ink-faint);padding:10px 0">No departures today</div>';
   document.getElementById('dash-ops').innerHTML=
     `<div class="card" style="margin-bottom:14px"><div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Arrivals Today (${arrivals.length})</div>${arrRow}</div>`+
@@ -102,6 +99,11 @@ function renderDashboard(){
   document.getElementById('dash-lower').innerHTML=
     `<div class="card" style="margin:0"><div class="ct" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>Vaccination Watch</div>${vaccHtml}</div>`+
     `<div class="card" style="margin:0"><div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Recent Activity</div>${actHtml}</div>`;
+  
+  // Render three features
+  if(typeof renderCurrentlyBoarding === 'function') renderCurrentlyBoarding();
+  if(typeof renderDayNavigation === 'function') renderDayNavigation();
+  if(typeof renderTrends === 'function') renderTrends();
 }
 
 /* ── Right panel ──────────────────────────────────────────── */
@@ -144,4 +146,477 @@ function renderRightPanel() {
         return `<div class="rp-item" onclick="goPage('calendar')"><span class="rp-item-dot soon"></span><span style="flex:1">${esc(r.dog_name||r.owner_name)}</span><span style="font-size:10px;color:var(--ink-faint)">${label}</span></div>`;
       }).join('')
     : '<div class="rp-empty">Nothing in next 3 days</div>';
+}
+/* ═══════════════════════════════════════
+   THREE WORKING FEATURES
+═══════════════════════════════════════ */
+
+// FEATURE 1: Currently Boarding Dogs
+
+/* ═══════════════════════════════════════
+   DASHBOARD: Currently Boarding + Quick Check-in + Day Navigation
+═══════════════════════════════════════ */
+
+// Currently Boarding — only dogs whose status is checked_in right now
+function renderCurrentlyBoarding(){
+  const cb = document.getElementById('dash-currently-boarding');
+  if(!cb) return;
+  const now = new Date();
+
+  const current = (typeof requests!=='undefined'?requests:[]).filter(r => {
+    if(r.status !== 'checked_in') return false;
+    const co = new Date(r.checkout);
+    return co >= now || isNaN(co);  // still here if checkout in future (or unknown)
+  }).sort((a,b)=> new Date(a.actual_checkin||a.checkin) - new Date(b.actual_checkin||b.checkin));
+
+  if(current.length === 0){
+    cb.innerHTML = '<div class="card"><div class="ct">🏠 Currently Boarding</div><div class="es"><span class="ei">🏠</span><p>No dogs currently boarding</p></div></div>';
+    return;
+  }
+
+  let html = '<div class="card"><div class="ct">🏠 Currently Boarding</div>';
+  current.forEach(r => {
+    const co = new Date(r.checkout);
+    const coStr = isNaN(co) ? 'open' : (co.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' at ' + co.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}));
+    html += '<div style="display:flex;align-items:center;gap:11px;padding:11px;background:var(--cream-mid);border-radius:8px;margin-bottom:8px">'
+      + '<div style="font-size:18px">' + (r.service==='boarding'?'🏡':'☀️') + '</div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13px;font-weight:600">' + esc(r.dog_name||'') + '</div>'
+      + '<div style="font-size:11px;color:var(--ink-faint)">Checks out ' + coStr + '</div>'
+      + '</div>'
+      + '<button class="btn btn-g sm" style="font-size:11px" onclick="openCheckOut(\'' + r.id + '\')">Check Out</button>'
+      + '</div>';
+  });
+  html += '</div>';
+  cb.innerHTML = html;
+}
+
+// Quick Check-in — real status transition for a confirmed/pending reservation
+async function quickCheckIn(requestId){
+  const req = (typeof requests!=='undefined'?requests:[]).find(r => r.id === requestId);
+  if(!req){ toast('Reservation not found.', true); return; }
+  if(req.status === 'pending'){ toast('Please confirm this reservation before checking in.', true); return; }
+  if(req.status === 'checked_in'){ toast(req.dog_name+' is already checked in.'); return; }
+  if(req.status === 'completed'){ toast(req.dog_name+' is already checked out.', true); return; }
+  if(!confirm('Check in '+req.dog_name+' now?')) return;
+
+  const now = new Date().toISOString();
+  setSyncState('busy');
+  try{
+    await dbUpdReq(req.id, {status:'checked_in', actual_checkin: now});
+    req.status = 'checked_in';
+    req.actual_checkin = now;
+    setSyncState('ok');
+    toast('✓ '+req.dog_name+' checked in.');
+    if(typeof updateBadges==='function') updateBadges();
+    if(typeof renderDashboard==='function') renderDashboard();
+  }catch(e){
+    setSyncState('err');
+    toast('Error: '+e.message, true);
+  }
+}
+
+// Undo a mistaken checkout — revert completed → checked_in, remove the premature invoice/booking,
+// but keep the reservation's check-in data intact.
+async function undoCheckout(requestId){
+  const req = (typeof requests!=='undefined'?requests:[]).find(r => r.id === requestId);
+  if(!req){ toast('Reservation not found.', true); return; }
+  if(req.status !== 'completed'){ toast('This reservation is not checked out.', true); return; }
+  if(!confirm('Undo checkout for '+req.dog_name+'?\n\nThis reverts them to "checked in" and removes the invoice that checkout generated. Their check-in details are kept.')) return;
+
+  setSyncState('busy');
+  try{
+    const bookingId = req.booking_id;
+    // Remove the premature booking/invoice if one was created
+    if(bookingId){
+      try { await dbDeleteBooking(bookingId); } catch(delErr){ console.warn('Booking delete failed (continuing):', delErr); }
+      if(typeof bookings!=='undefined') bookings = bookings.filter(b=> b.id !== bookingId);
+    }
+    // Revert reservation status; keep actual_checkin, clear checkout-side fields
+    await dbUpdReq(req.id, {status:'checked_in', actual_checkout:null, final_total:null, booking_id:null});
+    req.status = 'checked_in';
+    req.actual_checkout = null;
+    req.final_total = null;
+    req.booking_id = null;
+    setSyncState('ok');
+    toast('✓ Checkout undone — '+req.dog_name+' is boarding again.');
+    if(typeof updateBadges==='function') updateBadges();
+    if(typeof renderDashboard==='function') renderDashboard();
+    if(typeof renderRequests==='function') renderRequests();
+  }catch(e){
+    setSyncState('err');
+    toast('Error: '+e.message, true);
+  }
+}
+
+// Undo a mistaken check-in — revert checked_in → confirmed, clear the check-in timestamp.
+async function undoCheckIn(requestId){
+  const req = (typeof requests!=='undefined'?requests:[]).find(r => r.id === requestId);
+  if(!req){ toast('Reservation not found.', true); return; }
+  if(req.status !== 'checked_in'){ toast('This reservation is not checked in.', true); return; }
+  if(!confirm('Undo check-in for '+req.dog_name+'?\n\nThis sends the reservation back to "confirmed" and clears the recorded check-in time.')) return;
+
+  setSyncState('busy');
+  try{
+    await dbUpdReq(req.id, {status:'confirmed', actual_checkin:null});
+    req.status = 'confirmed';
+    req.actual_checkin = null;
+    setSyncState('ok');
+    toast('✓ Check-in undone — '+req.dog_name+' is back to confirmed.');
+    if(typeof updateBadges==='function') updateBadges();
+    if(typeof renderDashboard==='function') renderDashboard();
+    if(typeof renderRequests==='function') renderRequests();
+  }catch(e){
+    setSyncState('err');
+    toast('Error: '+e.message, true);
+  }
+}
+
+// Day Navigation — shows arrivals, departures, and dogs whose stay overlaps the day
+let browseDate = new Date();
+
+function renderDayNavigation(){
+  const navDiv = document.getElementById('dash-day-nav');
+  if(!navDiv) return;
+
+  const dayStart = new Date(browseDate); dayStart.setHours(0,0,0,0);
+  const dayEnd   = new Date(browseDate); dayEnd.setHours(23,59,59,999);
+
+  const list = (typeof requests!=='undefined'?requests:[]).filter(r => {
+    if(r.status === 'declined') return false;
+    const ci = new Date(r.actual_checkin || r.checkin);
+    const co = new Date(r.actual_checkout || r.checkout);
+    if(isNaN(ci)) return false;
+    return (ci <= dayEnd && (isNaN(co) ? true : co >= dayStart)); // overlaps the day
+  }).sort((a,b)=> new Date(a.actual_checkin||a.checkin) - new Date(b.actual_checkin||b.checkin));
+
+  const dateStr = browseDate.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  const isToday = browseDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+
+  let html = '<div class="card"><div class="ct" style="display:flex;justify-content:space-between;align-items:center">'
+    + '<span>📅 ' + dateStr + (isToday?' (Today)':'') + '</span>'
+    + '<div style="display:flex;gap:6px">'
+    + '<button class="btn btn-o sm" style="padding:6px 12px" onclick="prevDay()">←</button>'
+    + '<button class="btn btn-o sm" style="padding:6px 12px" onclick="todayDay()">Today</button>'
+    + '<button class="btn btn-o sm" style="padding:6px 12px" onclick="nextDay()">→</button>'
+    + '</div></div>';
+
+  if(list.length === 0){
+    html += '<div style="padding:14px;text-align:center;color:var(--ink-faint)">No dogs for this day</div>';
+  } else {
+    list.forEach(r => {
+      const ci = new Date(r.actual_checkin || r.checkin);
+      const ciTime = ci.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      let label, color;
+      if(r.status === 'checked_in'){ label = 'Currently boarding · since ' + ciTime; color = 'var(--forest)'; }
+      else if(r.status === 'completed'){ label = 'Checked out'; color = 'var(--ink-faint)'; }
+      else if(r.status === 'confirmed'){ label = 'Arriving ' + ciTime; color = 'var(--bluep-text,var(--ink-mid))'; }
+      else { label = 'Requested · ' + ciTime; color = 'var(--ink-faint)'; }
+
+      html += '<div style="padding:11px;border-bottom:1px solid var(--cream-mid);display:flex;align-items:center;gap:10px">'
+        + '<div style="font-size:16px">' + (r.service==='boarding'?'🏡':'☀️') + '</div>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-weight:600;font-size:13px">' + esc(r.dog_name||'') + '</div>'
+        + '<div style="font-size:11px;color:'+color+'">' + label + '</div>'
+        + '</div>';
+      if(r.status === 'confirmed'){
+        html += '<button class="btn btn-b sm" style="font-size:11px" onclick="quickCheckIn(\''+r.id+'\')">Check In</button>';
+      } else if(r.status === 'pending'){
+        html += '<button class="btn btn-o sm" style="font-size:11px" onclick="goPage(\'requests\')">Confirm first</button>';
+      } else if(r.status === 'checked_in'){
+        html += '<button class="btn btn-g sm" style="font-size:11px" onclick="openCheckOut(\''+r.id+'\')">Check Out</button>';
+      } else {
+        html += '<button class="btn btn-o sm" style="font-size:11px" onclick="goPage(\'requests\')">View</button>';
+      }
+      html += '</div>';
+    });
+  }
+
+  html += '</div>';
+  navDiv.innerHTML = html;
+}
+
+function prevDay(){ browseDate.setDate(browseDate.getDate()-1); renderDayNavigation(); }
+function nextDay(){ browseDate.setDate(browseDate.getDate()+1); renderDayNavigation(); }
+function todayDay(){ browseDate = new Date(); renderDayNavigation(); }
+
+/* ═══════════════════════════════════════
+   DASHBOARD: Trend perspectives (switchable)
+═══════════════════════════════════════ */
+let trendView = null;
+let trendFormat = 'bar';  // 'bar' | 'line' | 'donut'
+
+const TREND_CATALOG = [
+  ['revenue',   'Revenue mix',        'Boarding vs day care revenue split'],
+  ['occupancy', 'Occupancy',          '% of capacity booked over next 14 days'],
+  ['volume',    'Monthly volume',     'Completed visits per month'],
+  ['breeds',    'Breeds & regulars',  'Top breeds and repeat customers'],
+  ['los',       'Length of stay',     'Average nights per boarding stay'],
+  ['revpak',    'Revenue / kennel',   'Avg revenue per available kennel-night'],
+  ['retention', 'New vs returning',   'Share of stays from returning customers'],
+  ['dow',       'Day-of-week demand', 'Which weekdays are busiest']
+];
+
+// Which formats make sense per trend. 'stat' trends show a single number (no chart choice).
+const TREND_FORMATS = {
+  revenue:   ['bar','donut'],
+  occupancy: ['bar','line'],
+  volume:    ['bar','line'],
+  breeds:    ['bar'],            // two grouped lists; bars only
+  los:       ['stat'],
+  revpak:    ['stat'],
+  retention: ['bar','donut'],
+  dow:       ['bar','line']
+};
+
+function trendEnabled(key){
+  const t = (typeof settings!=='undefined' && settings.trendsEnabled) ? settings.trendsEnabled : null;
+  if(!t) return true;
+  return t[key] !== false;
+}
+function enabledTrends(){ return TREND_CATALOG.filter(t=>trendEnabled(t[0])); }
+
+function setTrendView(v){
+  trendView = v;
+  // reset format to first valid one for this trend
+  const fmts = TREND_FORMATS[v] || ['bar'];
+  if(fmts.indexOf(trendFormat)===-1) trendFormat = fmts[0];
+  renderTrends();
+}
+function setTrendFormat(f){ trendFormat = f; renderTrends(); }
+
+function renderTrends(){
+  const host = document.getElementById('dash-trends');
+  if(!host) return;
+  const avail = enabledTrends();
+  if(!avail.length){ host.innerHTML=''; return; }
+  if(!trendView || !avail.some(t=>t[0]===trendView)){ trendView = avail[0][0]; trendFormat = (TREND_FORMATS[trendView]||['bar'])[0]; }
+
+  let html = '<div class="card"><div class="ct">📊 Trends</div>';
+  // trend selector
+  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">';
+  avail.forEach(function(t){
+    const key=t[0], label=t[1], on = trendView===key;
+    html += '<button class="btn '+(on?'btn-p':'btn-o')+' sm" style="font-size:11px" onclick="setTrendView(\''+key+'\')">'+esc(label)+'</button>';
+  });
+  html += '</div>';
+
+  // format selector (only when >1 format available)
+  const fmts = TREND_FORMATS[trendView] || ['bar'];
+  if(fmts.length>1 && fmts.indexOf('stat')===-1){
+    const fmtLabel={bar:'▭ Bars',line:'📈 Line',donut:'◓ Donut'};
+    html += '<div style="display:flex;gap:6px;margin-bottom:14px">';
+    fmts.forEach(function(f){
+      const on = trendFormat===f;
+      html += '<button class="btn '+(on?'btn-p':'btn-o')+' sm" style="font-size:10px;padding:4px 9px" onclick="setTrendFormat(\''+f+'\')">'+fmtLabel[f]+'</button>';
+    });
+    html += '</div>';
+  }
+
+  html += '<div>'+trendBody()+'</div>';
+  html += '</div>';
+  host.innerHTML = html;
+}
+
+/* ── format renderers ── */
+function trendBar(label, value, max, valueLabel, color){
+  const pct = max>0 ? Math.round((value/max)*100) : 0;
+  color = color || 'var(--brown)';
+  return '<div style="margin-bottom:10px">'
+    + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'
+    + '<span style="color:var(--ink)">'+esc(label)+'</span>'
+    + '<span style="color:var(--ink-faint);font-weight:600">'+esc(valueLabel)+'</span></div>'
+    + '<div style="height:8px;background:var(--cream-mid);border-radius:5px;overflow:hidden">'
+    + '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:5px"></div></div></div>';
+}
+function trendStat(big, sub){
+  return '<div style="text-align:center;padding:14px 0"><div style="font-family:\'DM Serif Display\',serif;font-size:34px;color:var(--ink);line-height:1.1">'+esc(big)+'</div><div style="font-size:12px;color:var(--ink-faint);margin-top:4px">'+esc(sub)+'</div></div>';
+}
+// series = [{label, value, valueLabel, color}]
+function renderSeries(series, unitLabel){
+  if(trendFormat==='line') return trendLine(series, unitLabel);
+  if(trendFormat==='donut') return trendDonut(series);
+  // default bars
+  const max = Math.max.apply(null, series.map(function(s){return s.value;}).concat([0]));
+  return series.map(function(s){ return trendBar(s.label, s.value, max, s.valueLabel, s.color); }).join('');
+}
+function trendLine(series, unitLabel){
+  if(series.length<2) { // not enough points for a line; fall back to bars
+    const max=Math.max.apply(null,series.map(function(s){return s.value;}).concat([0]));
+    return series.map(function(s){return trendBar(s.label,s.value,max,s.valueLabel,s.color);}).join('');
+  }
+  const W=300, H=120, padL=8, padR=8, padT=10, padB=22;
+  const vals=series.map(function(s){return s.value;});
+  const maxV=Math.max.apply(null,vals), minV=Math.min.apply(null,vals.concat([0]));
+  const span=(maxV-minV)||1;
+  const n=series.length;
+  const x=function(i){ return padL + i*((W-padL-padR)/(n-1)); };
+  const y=function(v){ return padT + (H-padT-padB)*(1-(v-minV)/span); };
+  let pts=series.map(function(s,i){return x(i)+','+y(s.value);}).join(' ');
+  // area fill path
+  let area='M'+x(0)+','+(H-padB)+' L'+series.map(function(s,i){return x(i)+','+y(s.value);}).join(' L')+' L'+x(n-1)+','+(H-padB)+' Z';
+  let dots=series.map(function(s,i){return '<circle cx="'+x(i)+'" cy="'+y(s.value)+'" r="3" fill="var(--brown)"/>';}).join('');
+  let labels=series.map(function(s,i){
+    const anchor = i===0?'start':(i===n-1?'end':'middle');
+    return '<text x="'+x(i)+'" y="'+(H-6)+'" font-size="9" fill="var(--ink-faint)" text-anchor="'+anchor+'">'+esc(s.label)+'</text>';
+  }).join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;overflow:visible">'
+    + '<path d="'+area+'" fill="var(--brown)" opacity="0.10"/>'
+    + '<polyline points="'+pts+'" fill="none" stroke="var(--brown)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+    + dots + labels
+    + '</svg>'
+    + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-faint);margin-top:6px"><span>'+esc(series[0].valueLabel)+'</span><span>'+esc(series[n-1].valueLabel)+'</span></div>';
+}
+function trendDonut(series){
+  const total=series.reduce(function(a,s){return a+s.value;},0);
+  if(total<=0) return '<div style="padding:10px 0;color:var(--ink-faint);font-size:13px">Not enough data yet.</div>';
+  const R=52, r=32, cx=70, cy=70, C=2*Math.PI*((R+r)/2), sw=R-r;
+  let acc=0, segs='';
+  const palette=['var(--brown)','var(--gold)','var(--forest)','var(--coral)','#9C7BB8','#5B8DB8'];
+  series.forEach(function(s,i){
+    const frac=s.value/total;
+    const dash=frac*C;
+    const color=s.color||palette[i%palette.length];
+    segs += '<circle cx="'+cx+'" cy="'+cy+'" r="'+((R+r)/2)+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" '
+         + 'stroke-dasharray="'+dash+' '+(C-dash)+'" stroke-dashoffset="'+(-acc)+'" transform="rotate(-90 '+cx+' '+cy+')"/>';
+    acc += dash;
+  });
+  let legend=series.map(function(s,i){
+    const color=s.color||palette[i%palette.length];
+    const pct=Math.round(s.value/total*100);
+    return '<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;font-size:12px"><span style="width:11px;height:11px;border-radius:3px;background:'+color+';flex:none"></span><span style="flex:1;color:var(--ink)">'+esc(s.label)+'</span><span style="color:var(--ink-faint);font-weight:600">'+esc(s.valueLabel)+'</span></div>';
+  }).join('');
+  return '<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">'
+    + '<svg viewBox="0 0 140 140" style="width:140px;height:140px;flex:none">'+segs
+    + '<text x="70" y="74" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">'+esc(series.length+'')+'</text>'
+    + '<text x="70" y="90" font-size="9" fill="var(--ink-faint)" text-anchor="middle">segments</text></svg>'
+    + '<div style="flex:1;min-width:140px">'+legend+'</div></div>';
+}
+
+/* ── trend data + bodies ── */
+function trendBody(){
+  const bk = (typeof bookings!=='undefined'?bookings:[]);
+  const rq = (typeof requests!=='undefined'?requests:[]);
+  const dg = (typeof dogs!=='undefined'?dogs:[]);
+  const empty = '<div style="padding:10px 0;color:var(--ink-faint);font-size:13px">Not enough data yet.</div>';
+
+  if(trendView==='revenue'){
+    let boardRev=0, dayRev=0;
+    bk.forEach(function(b){ const amt=parseFloat(b.grand_total)||0; if(b.service==='daycare') dayRev+=amt; else boardRev+=amt; });
+    const total=boardRev+dayRev;
+    if(total<=0) return empty;
+    const series=[
+      {label:'🏡 Boarding', value:boardRev, valueLabel:'$'+boardRev.toFixed(0)+' · '+Math.round(boardRev/total*100)+'%', color:'var(--brown)'},
+      {label:'☀️ Day Care', value:dayRev, valueLabel:'$'+dayRev.toFixed(0)+' · '+Math.round(dayRev/total*100)+'%', color:'var(--gold)'}
+    ];
+    let extra = trendFormat==='donut' ? '' : '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--cream-mid);display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600">Total billed</span><span style="font-weight:700">$'+total.toFixed(0)+'</span></div>';
+    return renderSeries(series)+extra;
+  }
+
+  if(trendView==='occupancy'){
+    const cap = (typeof settings!=='undefined' && settings.capacity) ? settings.capacity : 12;
+    const today=new Date(); today.setHours(0,0,0,0);
+    const series=[]; let any=false;
+    for(let i=0;i<14;i++){
+      const day=new Date(today); day.setDate(day.getDate()+i);
+      const dayStart=new Date(day); dayStart.setHours(0,0,0,0);
+      const dayEnd=new Date(day); dayEnd.setHours(23,59,59,999);
+      let count=0;
+      rq.forEach(function(r){
+        if(r.status==='declined'||r.status==='completed'||r.status==='pending') return;
+        const ci=new Date(r.actual_checkin||r.checkin), co=new Date(r.checkout);
+        if(!isNaN(ci) && ci<=dayEnd && (isNaN(co)?true:co>=dayStart)){ count+= (r.dog_ids&&r.dog_ids.length)?r.dog_ids.length:1; }
+      });
+      if(count>0) any=true;
+      const lbl = i===0 ? 'Today' : day.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      const pctNum = Math.round((count/cap)*100);
+      const color = pctNum>=90 ? 'var(--danger)' : pctNum>=70 ? 'var(--gold)' : 'var(--forest)';
+      series.push({label:lbl, value:count, valueLabel:count+'/'+cap+' · '+pctNum+'%', color:color});
+    }
+    if(!any) return '<div style="padding:10px 0;color:var(--ink-faint);font-size:13px">No confirmed stays in the next 14 days.</div>';
+    return '<div style="font-size:11px;color:var(--ink-faint);margin-bottom:10px">Capacity '+cap+' spaces · next 14 days</div>'+renderSeries(series);
+  }
+
+  if(trendView==='volume'){
+    const months={};
+    bk.forEach(function(b){ const d=new Date(b.saved_at||b.checkin); if(isNaN(d)) return; const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); months[key]=(months[key]||0)+1; });
+    const keys=Object.keys(months).sort().slice(-6);
+    if(!keys.length) return empty;
+    const series=keys.map(function(k){
+      const parts=k.split('-');
+      const lbl=new Date(+parts[0],+parts[1]-1,1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+      return {label:lbl, value:months[k], valueLabel:months[k]+' visit'+(months[k]!==1?'s':''), color:'var(--brown)'};
+    });
+    return renderSeries(series);
+  }
+
+  if(trendView==='breeds'){
+    const breeds={};
+    dg.forEach(function(d){ const b=(d.breed||'').trim()||'Unknown'; breeds[b]=(breeds[b]||0)+1; });
+    const topBreeds=Object.entries(breeds).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+    const ownerCounts={};
+    bk.forEach(function(b){ (b.entries||[]).forEach(function(e){ const o=(e.ownerName||'').trim(); if(o) ownerCounts[o]=(ownerCounts[o]||0)+1; }); });
+    const repeats=Object.entries(ownerCounts).filter(function(e){return e[1]>1;}).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+    if(!topBreeds.length && !repeats.length) return empty;
+    let out='';
+    if(topBreeds.length){
+      const max=topBreeds[0][1];
+      out += '<div style="font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Top breeds</div>';
+      out += topBreeds.map(function(e){return trendBar(e[0], e[1], max, e[1]+' dog'+(e[1]!==1?'s':''), 'var(--brown)');}).join('');
+    }
+    if(repeats.length){
+      const max=repeats[0][1];
+      out += '<div style="font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">Repeat customers</div>';
+      out += repeats.map(function(e){return trendBar(e[0], e[1], max, e[1]+' stays', 'var(--gold)');}).join('');
+    } else {
+      out += '<div style="margin-top:12px;font-size:12px;color:var(--ink-faint)">No repeat customers yet.</div>';
+    }
+    return out;
+  }
+
+  if(trendView==='los'){
+    let totalNights=0, n=0;
+    bk.forEach(function(b){ if(b.service==='daycare') return; const ci=new Date(b.checkin), co=new Date(b.checkout); if(isNaN(ci)||isNaN(co)) return; const nights=Math.max(1,Math.round((co-ci)/86400000)); totalNights+=nights; n++; });
+    if(!n) return empty;
+    const avg=(totalNights/n).toFixed(1);
+    return trendStat(avg+' nights', 'Average boarding stay · across '+n+' completed stay'+(n!==1?'s':''));
+  }
+
+  if(trendView==='revpak'){
+    const cap = (typeof settings!=='undefined' && settings.capacity) ? settings.capacity : 12;
+    let rev=0, minD=null, maxD=null;
+    bk.forEach(function(b){ const amt=parseFloat(b.grand_total)||0; rev+=amt; const d=new Date(b.saved_at||b.checkin); if(!isNaN(d)){ if(!minD||d<minD)minD=d; if(!maxD||d>maxD)maxD=d; } });
+    if(rev<=0||!minD) return empty;
+    const days=Math.max(1,Math.round((maxD-minD)/86400000)+1);
+    const revpak=rev/(cap*days);
+    return trendStat('$'+revpak.toFixed(2), 'Per kennel-night available · '+cap+' kennels over '+days+' day'+(days!==1?'s':''))
+      + '<div style="font-size:11px;color:var(--ink-faint);text-align:center;margin-top:-6px">Higher = better use of capacity</div>';
+  }
+
+  if(trendView==='retention'){
+    const seen={}; let nw=0, ret=0;
+    const ordered=bk.slice().sort(function(a,b){return new Date(a.saved_at||a.checkin)-new Date(b.saved_at||b.checkin);});
+    ordered.forEach(function(b){ (b.entries||[]).forEach(function(e){ const o=(e.ownerName||'').trim().toLowerCase(); if(!o) return; if(seen[o]) ret++; else { nw++; seen[o]=true; } }); });
+    const total=nw+ret;
+    if(!total) return empty;
+    const series=[
+      {label:'🆕 New customers', value:nw, valueLabel:nw+' · '+Math.round(nw/total*100)+'%', color:'var(--forest)'},
+      {label:'🔁 Returning', value:ret, valueLabel:ret+' · '+Math.round(ret/total*100)+'%', color:'var(--gold)'}
+    ];
+    const note = trendFormat==='donut' ? '' : '<div style="font-size:11px;color:var(--ink-faint);text-align:center;margin-top:6px">Higher returning share = stronger loyalty</div>';
+    return renderSeries(series)+note;
+  }
+
+  if(trendView==='dow'){
+    const dows=[0,0,0,0,0,0,0]; const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    bk.forEach(function(b){ const d=new Date(b.checkin); if(!isNaN(d)) dows[d.getDay()]++; });
+    rq.filter(function(r){return r.status==='confirmed'||r.status==='checked_in';}).forEach(function(r){ const d=new Date(r.actual_checkin||r.checkin); if(!isNaN(d)) dows[d.getDay()]++; });
+    const total=dows.reduce(function(a,b){return a+b;},0);
+    if(!total) return empty;
+    const order=[1,2,3,4,5,6,0];
+    const series=order.map(function(i){ return {label:names[i], value:dows[i], valueLabel:String(dows[i]), color:(i===0||i===6?'var(--gold)':'var(--brown)')}; });
+    return renderSeries(series);
+  }
+
+  return empty;
 }
