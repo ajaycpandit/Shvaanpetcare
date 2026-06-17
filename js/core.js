@@ -77,7 +77,11 @@ async function logDeletion(kind, info){
     created_at: new Date().toISOString()
   };
   try{ await dbAddNote(note); if(typeof visitNotes!=='undefined') visitNotes.unshift(note); }
-  catch(e){ console.error('Audit log write failed:', e && e.message ? e.message : e); }
+  catch(e){
+    const reason = e && e.message ? e.message : String(e);
+    console.error('Audit log write failed:', reason);
+    if(typeof toast==='function') toast('Note: action done, but audit log failed — '+reason, true);
+  }
 }
 async function dbUpdNote(id,d){ return await sbFetch('visit_notes?id=eq.'+encodeURIComponent(id),'PATCH',d); }
 async function dbDelNote(id){ return await sbFetch('visit_notes?id=eq.'+encodeURIComponent(id),'DELETE'); }
