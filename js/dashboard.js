@@ -419,18 +419,24 @@ function renderDayNavigation(){
   if(list.length === 0){
     html += '<div style="padding:14px;text-align:center;color:var(--ink-faint)">No dogs for this day</div>';
   } else {
+    const todayKey = new Date().toISOString().split('T')[0];
+    const fmtWhen = (dt) => {
+      if(isNaN(dt)) return '';
+      const t = dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      const key = dt.toISOString().split('T')[0];
+      const dateLabel = key===todayKey ? 'Today' : dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      return dateLabel + ' · ' + t;
+    };
     list.forEach(r => {
       const ci = new Date(r.actual_checkin || r.checkin);
-      const ciTime = ci.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      const co = new Date(r.actual_checkout || r.checkout);
       let label, color;
-      if(r.status === 'checked_in'){ label = 'Currently boarding · since ' + ciTime; color = 'var(--forest)'; }
+      if(r.status === 'checked_in'){ label = 'Boarding since ' + fmtWhen(ci); color = 'var(--forest)'; }
       else if(r.status === 'completed'){
-        const co = new Date(r.actual_checkout || r.checkout);
-        const coTime = isNaN(co) ? '' : ' · ' + co.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-        label = 'Checked out' + coTime; color = 'var(--ink-faint)';
+        label = 'Checked out ' + (isNaN(co) ? '' : fmtWhen(co)); color = 'var(--ink-faint)';
       }
-      else if(r.status === 'confirmed'){ label = 'Arriving ' + ciTime; color = 'var(--bluep-text,var(--ink-mid))'; }
-      else { label = 'Requested · ' + ciTime; color = 'var(--ink-faint)'; }
+      else if(r.status === 'confirmed'){ label = 'Arriving ' + fmtWhen(ci); color = 'var(--bluep-text,var(--ink-mid))'; }
+      else { label = 'Requested · ' + fmtWhen(ci); color = 'var(--ink-faint)'; }
 
       html += '<div style="padding:11px;border-bottom:1px solid var(--cream-mid);display:flex;align-items:center;gap:10px">'
         + '<div style="font-size:16px">' + (r.service==='boarding'?'🏡':'☀️') + '</div>'
@@ -445,7 +451,6 @@ function renderDayNavigation(){
       } else if(r.status === 'checked_in'){
         html += '<button class="btn btn-g sm" style="font-size:11px" onclick="quickCheckOut(\''+r.id+'\')">Check Out</button>';
       } else if(r.status === 'completed'){
-        // Show a clear "Checked out" status badge; clicking opens the invoice if one exists
         const click = r.booking_id ? ' style="cursor:pointer" onclick="openInv(\''+r.booking_id+'\')" title="View invoice"' : '';
         html += '<span class="bdg"'+click+' style="background:var(--cream-mid);color:var(--ink-faint);font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap'+(r.booking_id?';cursor:pointer':'')+'">✓ Checked out</span>';
       } else {

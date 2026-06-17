@@ -84,9 +84,35 @@ function renderHistory() {
 }
 
 async function deleteBooking(id) {
-  if(!confirm('Delete this booking?')) return;
+  // Find a completed reservation linked to this booking, so both stay in sync
+  const linkedReq = (typeof requests!=='undefined'?requests:[]).find(r=>r.booking_id===id);
+  const b = (typeof bookings!=='undefined'?bookings:[]).find(x=>x.id===id);
+  const msg = linkedReq
+    ? 'Delete this booking?\n\nThis will also remove its reservation from the Completed list. This cannot be undone.'
+    : 'Delete this booking?';
+  if(!confirm(msg)) return;
   setSyncState('busy');
-  try { await dbDeleteBooking(id); bookings=bookings.filter(b=>b.id!==id); setSyncState('ok'); renderHistory(); updateBadges(); toast('Booking deleted.'); }
+  try {
+    await dbDeleteBooking(id);
+    bookings=bookings.filter(x=>x.id!==id);
+    // Remove the linked reservation too
+    if(linkedReq){
+      try{ await dbDelReq(linkedReq.id); if(typeof requests!=='undefined') requests=requests.filter(r=>r.id!==linkedReq.id); }
+      catch(e){ console.warn('Could not delete linked reservation', linkedReq.id, e); }
+    }
+    // Audit log
+    const dn = (linkedReq && linkedReq.dog_name) || ((b&&b.entries&&b.entries[0]&&(b.entries[0].dogName||b.entries[0].dog_name))||'');
+    await logDeletion('booking', {
+      dog_id: linkedReq?linkedReq.dog_id:null,
+      dog_name: dn,
+      detail: (dn||'booking') + (b&&b.grand_total!=null?(' $'+parseFloat(b.grand_total).toFixed(2)):'') + (linkedReq?' + reservation':'')
+    });
+    setSyncState('ok');
+    renderHistory(); updateBadges();
+    if(typeof renderRequests==='function') renderRequests();
+    if(typeof refreshActive==='function') refreshActive();
+    toast('Booking deleted.');
+  }
   catch(e){ setSyncState('err'); toast('Error: '+e.message,true); }
 }
 

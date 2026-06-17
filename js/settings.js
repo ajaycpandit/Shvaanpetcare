@@ -374,7 +374,7 @@ function renderReversalTool(){
   });
   html += '</div>';
   html += '<button class="btn btn-d" style="margin-top:12px" onclick="runReversal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>Reverse selected → Confirmed</button>';
-  html += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--cream-dark)"><div style="font-size:11px;font-weight:600;color:var(--ink-mid);margin-bottom:6px">Recent reversal log</div><div id="reversal-log" style="font-size:11px;color:var(--ink-faint)"></div></div>';
+  html += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--cream-dark)"><div style="font-size:11px;font-weight:600;color:var(--ink-mid);margin-bottom:6px">Recent admin actions (reversals &amp; deletions)</div><div id="reversal-log" style="font-size:11px;color:var(--ink-faint)"></div></div>';
   host.innerHTML = html;
   renderReversalLog();
 }
