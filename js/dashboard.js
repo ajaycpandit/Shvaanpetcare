@@ -424,7 +424,11 @@ function renderDayNavigation(){
       const ciTime = ci.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
       let label, color;
       if(r.status === 'checked_in'){ label = 'Currently boarding · since ' + ciTime; color = 'var(--forest)'; }
-      else if(r.status === 'completed'){ label = 'Checked out'; color = 'var(--ink-faint)'; }
+      else if(r.status === 'completed'){
+        const co = new Date(r.actual_checkout || r.checkout);
+        const coTime = isNaN(co) ? '' : ' · ' + co.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+        label = 'Checked out' + coTime; color = 'var(--ink-faint)';
+      }
       else if(r.status === 'confirmed'){ label = 'Arriving ' + ciTime; color = 'var(--bluep-text,var(--ink-mid))'; }
       else { label = 'Requested · ' + ciTime; color = 'var(--ink-faint)'; }
 
@@ -440,6 +444,10 @@ function renderDayNavigation(){
         html += '<button class="btn btn-o sm" style="font-size:11px" onclick="goPage(\'requests\')">Confirm first</button>';
       } else if(r.status === 'checked_in'){
         html += '<button class="btn btn-g sm" style="font-size:11px" onclick="quickCheckOut(\''+r.id+'\')">Check Out</button>';
+      } else if(r.status === 'completed'){
+        // Show a clear "Checked out" status badge; clicking opens the invoice if one exists
+        const click = r.booking_id ? ' style="cursor:pointer" onclick="openInv(\''+r.booking_id+'\')" title="View invoice"' : '';
+        html += '<span class="bdg"'+click+' style="background:var(--cream-mid);color:var(--ink-faint);font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap'+(r.booking_id?';cursor:pointer':'')+'">✓ Checked out</span>';
       } else {
         html += '<button class="btn btn-o sm" style="font-size:11px" onclick="goPage(\'requests\')">View</button>';
       }
