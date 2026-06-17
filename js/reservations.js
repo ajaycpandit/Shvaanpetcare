@@ -118,13 +118,21 @@ function renderRequests(){
 }
 async function updateReq(id,status){
   setSyncState('busy');
-  try{ await dbUpdReq(id,{status}); const r=requests.find(x=>x.id===id); if(r) r.status=status; setSyncState('ok'); renderRequests(); updateBadges(); if(typeof renderCalendar==='function'&&document.getElementById('pg-calendar').classList.contains('active')){renderCalendar();renderUpcoming();} toast('Reservation '+status.replace('_',' ')+'.'); }
+  try{ await dbUpdReq(id,{status}); const r=requests.find(x=>x.id===id); if(r) r.status=status; setSyncState('ok'); renderRequests(); updateBadges(); if(typeof refreshActive==='function') refreshActive(); if(typeof renderCalendar==='function'&&document.getElementById('pg-calendar').classList.contains('active')){renderCalendar();renderUpcoming();} toast('Reservation '+status.replace('_',' ')+'.'); }
   catch(e){ setSyncState('err'); toast('Error: '+e.message, true); }
 }
 async function delRequest(id){
   if(!confirm('Delete this reservation?')) return;
   setSyncState('busy');
-  try{ await dbDelReq(id); requests=requests.filter(r=>r.id!==id); setSyncState('ok'); renderRequests(); updateBadges(); toast('Reservation deleted.'); }
+  try{
+    await dbDelReq(id);
+    requests=requests.filter(r=>r.id!==id);
+    setSyncState('ok');
+    renderRequests(); updateBadges();
+    if(typeof renderDashboard==='function') renderDashboard();
+    if(typeof refreshActive==='function') refreshActive();
+    toast('Reservation deleted.');
+  }
   catch(e){ setSyncState('err'); toast('Error: '+e.message, true); }
 }
 
@@ -306,6 +314,7 @@ async function saveEditReq(){
     await dbUpdReq(r.id, upd);
     Object.assign(r, upd);
     setSyncState('ok'); closeEditReq(); renderRequests(); updateBadges();
+    if(typeof refreshActive==='function') refreshActive();
     if(document.getElementById('pg-calendar').classList.contains('active')){renderCalendar();renderUpcoming();}
     toast('Reservation updated.');
   }catch(e){ setSyncState('err'); toast('Error: '+e.message, true); }
