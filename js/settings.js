@@ -51,6 +51,7 @@ function renderSettings() {
   if(tc){ if(isAdmin()){ tc.style.display=''; renderTeamList(); tmRenderPerms(); tmRoleChange(); } else { tc.style.display='none'; } }
   if(typeof renderTrendToggles==='function') renderTrendToggles();
   if(typeof renderReversalToggle==='function') renderReversalToggle();
+  if(typeof renderAuditLog==='function') renderAuditLog();
 }
 
 // Dashboard trend enable/disable toggles
@@ -434,3 +435,43 @@ async function runReversal(){
   if(typeof renderRequests==='function') renderRequests();
   if(typeof renderDashboard==='function') renderDashboard();
 }
+
+/* ═══════════════════════════════════════
+   Activity Log — dedicated, always-available, paginated
+═══════════════════════════════════════ */
+let auditLogPage = 0;
+const AUDIT_PAGE_SIZE = 15;
+function renderAuditLog(){
+  const host = document.getElementById('audit-log-host');
+  if(!host) return;
+  const logs = (typeof visitNotes!=='undefined'?visitNotes:[])
+    .filter(function(n){ return n.note_type==='admin_action'; })
+    .sort(function(a,b){ return new Date(b.created_at)-new Date(a.created_at); });
+  if(!logs.length){ host.innerHTML='<div style="font-size:12px;color:var(--ink-faint)">No activity recorded yet.</div>'; return; }
+
+  const pages = Math.ceil(logs.length / AUDIT_PAGE_SIZE);
+  if(auditLogPage >= pages) auditLogPage = pages-1;
+  if(auditLogPage < 0) auditLogPage = 0;
+  const start = auditLogPage * AUDIT_PAGE_SIZE;
+  const slice = logs.slice(start, start + AUDIT_PAGE_SIZE);
+
+  let html = '<div style="border:1px solid var(--cream-dark);border-radius:var(--r2);overflow:hidden">';
+  html += slice.map(function(n){
+    const when = new Date(n.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+    const who = esc(n.created_by||'unknown');
+    return '<div style="padding:9px 11px;border-bottom:1px solid var(--cream-mid);font-size:12px">'
+      + '<div style="color:var(--ink)">'+esc(n.note||'')+'</div>'
+      + '<div style="font-size:11px;color:var(--ink-faint);margin-top:2px">'+who+' · '+when+'</div></div>';
+  }).join('');
+  html += '</div>';
+  if(pages > 1){
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:12px">'
+      + '<button class="btn btn-o sm" style="font-size:11px" '+(auditLogPage<=0?'disabled':'')+' onclick="auditLogPrev()">‹ Newer</button>'
+      + '<span style="color:var(--ink-faint)">Page '+(auditLogPage+1)+' of '+pages+' · '+logs.length+' entries</span>'
+      + '<button class="btn btn-o sm" style="font-size:11px" '+(auditLogPage>=pages-1?'disabled':'')+' onclick="auditLogNext()">Older ›</button>'
+      + '</div>';
+  }
+  host.innerHTML = html;
+}
+function auditLogPrev(){ if(auditLogPage>0){ auditLogPage--; renderAuditLog(); } }
+function auditLogNext(){ auditLogPage++; renderAuditLog(); }

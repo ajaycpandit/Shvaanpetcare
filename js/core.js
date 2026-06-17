@@ -76,7 +76,8 @@ async function logDeletion(kind, info){
     created_by: (typeof currentUser!=='undefined' && currentUser) ? currentUser.email : 'unknown',
     created_at: new Date().toISOString()
   };
-  try{ await dbAddNote(note); if(typeof visitNotes!=='undefined') visitNotes.unshift(note); }catch(_){}
+  try{ await dbAddNote(note); if(typeof visitNotes!=='undefined') visitNotes.unshift(note); }
+  catch(e){ console.error('Audit log write failed:', e && e.message ? e.message : e); }
 }
 async function dbUpdNote(id,d){ return await sbFetch('visit_notes?id=eq.'+encodeURIComponent(id),'PATCH',d); }
 async function dbDelNote(id){ return await sbFetch('visit_notes?id=eq.'+encodeURIComponent(id),'DELETE'); }

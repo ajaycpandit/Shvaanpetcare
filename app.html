@@ -311,8 +311,8 @@
             <button class="dd-btn" id="histo-dd-btn" onclick="toggleHistoDD()"><span id="histo-dd-lbl" style="color:var(--ink-faint)">All owners</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg></button>
             <div class="dd-menu" id="histo-dd-menu" style="display:none"><div style="padding:8px;position:sticky;top:0;background:var(--white);border-bottom:1px solid var(--cream-mid)"><input type="text" id="histo-dd-search" placeholder="Search owners…" oninput="renderHistoDDList()" onclick="event.stopPropagation()" style="width:100%;height:36px;padding:0 11px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--cream)"></div><div id="histo-dd-list"></div></div>
           </div>
-          <select id="hist-paid" onchange="renderHistory()" style="height:42px;padding:0 12px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--white);outline:none"><option value="all">All</option><option value="paid">Paid only</option><option value="unpaid">Unpaid only</option></select>
-          <select id="hist-svc" onchange="renderHistory()" style="height:42px;padding:0 12px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--white);outline:none"><option value="all">All services</option><option value="boarding">Boarding</option><option value="daycare">Day Care</option></select>
+          <select id="hist-paid" onchange="histPage=0;renderHistory()" style="height:42px;padding:0 12px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--white);outline:none"><option value="all">All</option><option value="paid">Paid only</option><option value="unpaid">Unpaid only</option></select>
+          <select id="hist-svc" onchange="histPage=0;renderHistory()" style="height:42px;padding:0 12px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--white);outline:none"><option value="all">All services</option><option value="boarding">Boarding</option><option value="daycare">Day Care</option></select>
         </div>
         <div id="hist-filter-tags" class="sel-tags" style="margin-bottom:10px"></div>
         <div id="hist-wrap"></div>
@@ -411,6 +411,16 @@
                   </label>
                 </div>
                 <div id="reversal-tool" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--cream-dark)"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="acc" id="acc-audit">
+            <div class="acc-head" onclick="toggleAcc('acc-audit')"><h3>📝 Activity Log</h3><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg></div>
+            <div class="acc-body">
+              <div class="ss">
+                <div class="fh" style="margin-bottom:10px">A record of deletions and reversals — what changed, who did it, and when.</div>
+                <div id="audit-log-host"></div>
               </div>
             </div>
           </div>
