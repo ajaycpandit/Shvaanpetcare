@@ -77,14 +77,22 @@ async function logDeletion(kind, info){
     created_at: new Date().toISOString()
   };
   try{
-    await dbAddNote(note);
+    const result = await dbAddNote(note);
     if(typeof visitNotes!=='undefined') visitNotes.unshift(note);
-    if(typeof toast==='function') toast('Activity logged ✓');
+    // Verify the write actually persisted by reading it back
+    let persisted = false;
+    try{
+      const check = await sbFetch('visit_notes?id=eq.'+encodeURIComponent(note.id));
+      persisted = Array.isArray(check) && check.length>0;
+    }catch(_){}
+    if(typeof toast==='function'){
+      setTimeout(function(){ toast(persisted ? 'Activity logged ✓' : 'Audit log did NOT persist (write returned but row absent)', !persisted); }, 3000);
+    }
   }
   catch(e){
     const reason = e && e.message ? e.message : String(e);
     console.error('Audit log write failed:', reason);
-    if(typeof toast==='function') toast('Audit log failed — '+reason, true);
+    if(typeof toast==='function'){ setTimeout(function(){ toast('Audit log failed — '+reason, true); }, 3000); }
   }
 }
 async function dbUpdNote(id,d){ return await sbFetch('visit_notes?id=eq.'+encodeURIComponent(id),'PATCH',d); }
