@@ -167,19 +167,32 @@ async function renderTeamList(){
   if(cnt) cnt.textContent = teamProfiles.length ? '('+teamProfiles.length+')' : '';
 
   if(!teamProfiles.length){ el.innerHTML='<div style="font-size:12px;color:var(--ink-faint);padding:4px 0 8px">No team members configured yet. Anyone who logs in without a profile is treated as admin (first-run). Add people below to assign roles.</div>'; return; }
-  el.innerHTML='<div id="team-rows" style="display:flex;flex-direction:column;gap:8px">'+teamProfiles.map(p=>{
+  // Group by role so a large team stays organized, in a responsive grid
+  const roleOrder=[['admin','Admins','var(--coral)'],['staff','Staff','var(--blue)'],['customer','Customers','var(--forest)']];
+  const card=(p)=>{
     const roleColor={admin:'var(--coral)',staff:'var(--blue)',customer:'var(--forest)'}[p.role]||'var(--ink-light)';
     let detail='';
     if(p.role==='staff'){ const perms=p.permissions||{}; const on=SECTIONS.filter(s=>(s in perms)?perms[s]:(s!=='finance'&&s!=='settings')); detail='Can see: '+(on.length?on.join(', '):'nothing'); }
     else if(p.role==='customer'){ detail='Owner: '+(p.owner_name||'—'); }
     else detail='Full access';
     const hay=(p.email+' '+p.role+' '+(p.owner_name||'')).toLowerCase();
-    return `<div class="team-row" data-search="${esc(hay)}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--cream-dark);border-radius:var(--r2);background:var(--cream-mid)">
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.email)} <span style="font-size:11px;font-weight:600;color:${roleColor};text-transform:capitalize">· ${esc(p.role)}</span></div><div style="font-size:11px;color:var(--ink-faint);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(detail)}</div></div>
+    return `<div class="team-row" data-search="${esc(hay)}" data-role="${p.role}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--cream-dark);border-radius:var(--r2);background:var(--cream-mid)">
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.email)}</div><div style="font-size:11px;color:var(--ink-faint);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(detail)}</div></div>
       <button class="btn btn-o sm" onclick="tmEdit('${esc(p.email).replace(/'/g,"\\'")}')">Edit</button>
       <button class="btn btn-d sm" onclick="tmDelete('${esc(p.email).replace(/'/g,"\\'")}')">×</button>
     </div>`;
-  }).join('')+'</div><div id="team-noresults" style="display:none;font-size:12px;color:var(--ink-faint);padding:8px 0">No matches.</div>';
+  };
+  let out='';
+  roleOrder.forEach(function(grp){
+    const members=teamProfiles.filter(p=>p.role===grp[0]);
+    if(!members.length) return;
+    out += '<div class="team-group" data-group="'+grp[0]+'" style="margin-bottom:12px">'
+      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:'+grp[2]+';margin-bottom:6px">'+grp[1]+' ('+members.length+')</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">'
+      + members.map(card).join('')
+      + '</div></div>';
+  });
+  el.innerHTML = out + '<div id="team-noresults" style="display:none;font-size:12px;color:var(--ink-faint);padding:8px 0">No matches.</div>';
 }
 
 function filterTeamList(){
@@ -187,6 +200,11 @@ function filterTeamList(){
   const rows=document.querySelectorAll('.team-row');
   let shown=0;
   rows.forEach(r=>{ const match=!q||r.getAttribute('data-search').includes(q); r.style.display=match?'':'none'; if(match) shown++; });
+  // Hide a role group if all its members are filtered out
+  document.querySelectorAll('.team-group').forEach(g=>{
+    const visible=g.querySelectorAll('.team-row:not([style*="display: none"])').length;
+    g.style.display = visible? '' : 'none';
+  });
   const nr=document.getElementById('team-noresults');
   if(nr) nr.style.display = (rows.length&&shown===0)?'block':'none';
 }
