@@ -341,6 +341,10 @@
             <div class="fd"><label>To</label><input type="date" id="fin-to" oninput="renderFinance()"></div>
           </div>
         </div>
+        <div class="card" id="fin-outstanding-card" style="border:1px solid var(--cream-dark)">
+          <div class="ct" style="justify-content:space-between"><span style="display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Outstanding Payments</span></div>
+          <div id="fin-outstanding"></div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px" id="fin-cards"></div>
         <div class="card">
           <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Income by Month</div>
